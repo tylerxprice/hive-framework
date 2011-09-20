@@ -147,7 +147,7 @@ class Player:
 
 
 class Hive:
-  #(TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- '. '\\ ', '  ') 
+  (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
   
   def __init__(self):
     self.head = None
@@ -232,7 +232,7 @@ class Game:
     # check if the piece is being played relative to another
     relativePiece = None
     relativePosition = None 
-    relativeMatches = re.search('(?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-9]?)(?P<rm>[\\\/-]?)$', moveString)
+    relativeMatches = re.search(' (?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-9]?)(?P<rm>[\\\/-]?)$', moveString)
     if relativeMatches:
       relativeColor = relativeMatches.group('color')
       relativeKind = relativeMatches.group('kind')
@@ -248,13 +248,17 @@ class Game:
       else:
         relativePosition = leftMove + ' '
 
+    # play the piece
     self.hive.putdownPiece(piece, relativePiece, relativePosition)
 
+
+    # flip current player
     if self.currentPlayer == self.whitePlayer:
       self.currentPlayer = self.blackPlayer
     else:
       self.currentPlayer = self.whitePlayer
 
+    # keep a running list of the played moves
     self.moveList.append(moveString)
 
   def getMoveListCsv(self):
@@ -264,7 +268,7 @@ class Game:
 def main():
     game = Game()
 
-    print ('Hive framework v0.1')
+    print ('HiveAI Framework v0.1')
     print ('-------------------')
     print 
 
