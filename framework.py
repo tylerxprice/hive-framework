@@ -10,75 +10,23 @@ class Piece:
     self.color = color
     self.kind = kind
     self.number = number
-    self.topLeftSibling = None
-    self.leftSibling = None
-    self.bottomLeftSibling = None
-    self.topRightSibling = None
-    self.rightSibling = None
-    self.bottomRightSibling = None
-    self.coveringSibling = None
-    self.coveredSibling = None
+    self.coordinates = (None, None, None) #x,y,z
 
   def pickup(self):
     logging.debug('Piece.pickup: ' + self.getNotation());
-
-    if self.topLeftSibling:
-      self.topLeftSibling.bottomRightSibling = None
-      self.topLeftSibling = None
-    if self.leftSibling:
-      self.leftSibling.rightSibling = None
-      self.leftSibling = None
-    if self.bottomLeftSibling:
-      self.bottomLeftSibling.topRightSibling = None
-      self.bottomLeftSibling = None
-    if self.topRightSibling:
-      self.topRightSibling.bottomLeftSibling = None
-      self.topRightSibling = None
-    if self.rightSibling:
-      self.rightSibling.leftSibling = None
-      self.rightSibling = None
-    if self.bottomRightSibling:
-      self.bottomRightSibling.topLeftSibling = None
-      self.bottomRightSibling = None
-    if self.coveringSibling:
-      self.coveringSibling.coveredSibling = None
-      self.coveringSibling = None
-    if self.coveredSibling:
-      self.coveredSibling.coveringSibling = None
-      self.coveredSibling = None
-
-
-  def getSiblings(self):
-    siblings = []
-    if self.topLeftSibling:
-      siblings.append(self.topLeftSibling)
-    if self.leftSibling:
-      siblings.append(self.leftSibling)
-    if self.bottomLeftSibling:
-      siblings.append(self.bottomLeftSibling)
-    if self.topRightSibling:
-      siblings.append(self.topRightSibling)
-    if self.rightSibling:
-      siblings.append(self.rightSibling)
-    if self.bottomRightSibling:
-      siblings.append(self.bottomRightSibling)
-    if self.coveringSibling:
-      siblings.append(self.coveringSibling)
-    if self.coveredSibling:
-      siblings.append(self.coveredSibling)
-
-    logging.debug('Piece.getSiblings found ' + str(len(siblings)) + ' siblings.')
-    return siblings
-
-  def getFirstSibling(self):
-    siblings = self.getSiblings()
-    if len(siblings) > 0:
-      return siblings[0]
-    return None
+    self.coordinates = (None, None, None)
 
   def getNotation(self):
-    return self.color + self.kind + str(self.number)
+    return self.color + self.kind + str(self.number)#+ ' @ ' + str(self.coordinates)
 
+  def getPbemNotation(self):
+    notation = self.kind
+    if notation == 'G': notation = 'H'
+    if self.color == 'b': notation = notation.lower()
+    return notation 
+
+  def __repr__(self):
+    return self.color + self.kind + str(self.number) + ' @ ' + str(self.coordinates)
 
 class QueenBeePiece(Piece):
   """
@@ -156,82 +104,211 @@ class Player:
     return self.pile.pickupPiece(color, kind, number)
 
 
+
+"""                                   
+  The Hive "board"
+
+                       +  1   2   3   4   5   6   7   8   9   10
+                                                                  
+                    A   .   .   .   .   .   .   .   .   .   .   A
+                                                                  
+                  B   .   .   .   .   .   .   .   .   .   .   B
+                                                                  
+                C   .   .   .   .   .   .   .   .   .   .   C
+                                                                  
+              D   .   .   .   .   .   .   .   .   .   .   D
+                           / \ / \
+            E   .   .   . | * | * | .   .   .   .   .   E
+                         / \ / \ / \
+          F   .   .   . | * | Q | * | .   .   .   .   F
+                         \ / \ / \ /
+        G   .   .   .   . | * | * | .   .   .   .   G
+                           \ / \ /
+      H   .   .   .   .   .   .   .   .   .   .   H
+                                                                  
+    I   .   .   .   .   .   .   .   .   .   .   I
+                                                                  
+  J   .   .   .   .   .   .   .   .   .   .   J
+                                                                  
+    1   2   3   4   5   6   7   8   9   10
+
+
+  The hive is not limited to this 10 by 10 board, the first piece will be placed at (0,0) and it will expand infinitely in both the positive and negative directions. 
+  This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the coordinantes we assume the piece with max(z)).
+
+  (x, y) connects to:
+    (x, y-1) TOPRIGHT
+    (x+1, y) RIGHT
+    (x+1, y+1) BOTTOMRIGHT
+    (x, y+1) BOTTOMLEFT
+    (x-1, y) LEFT
+    (x-1, y-1) TOPLEFT
+    Also connects to pieces at (x,y,z-1) COVERING and (x,y,z+1) COVERED
+   
+
+  Since the board expands ad infinitum, we will use a dictionary with keys "x,y". Where each entry is a list of pieces at the square.
+  e.g.:
+    board["0,0"] = [wQ]
+    board["-1,0"] = [bQ, wB1]   -- the white beetle is ontop of of the black queen bee, each piece will know their z value to find the max
+    board["-1,-1] = [bG1]
+
+"""
 class Hive:
+  # relative movement directives (not connectivity)
   (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
-  
+
   def __init__(self):
-    self.head = None
+    self.board = dict()
+
+  def getBoardKey(self, coordinates):
+    return str(coordinates[0]) + ',' + str(coordinates[1])
 
   def pickupPiece(self, color, kind, number):
-    logging.debug('Hive.pickupPiece: color=' + color + ', kind=' + kind + ', number=' + number)
     piece = self.getPiece(color, kind, number)
     if piece:
-      if piece == self.head:
-        self.head = piece.getFirstSibling()
-      piece.pickup();
-      logging.debug("Hive.pickupPiece: " + piece.getNotation())
-    return piece
+      # remove space from board or remove piece from space (if there are other pieces on it)
+      key = self.getBoardKey(piece.coordinates)
+      if len(self.board[key]) == 1:
+        del self.board[key]
+      else:
+        self.board[key].remove(piece)
+      piece.pickup()
+      return piece
+    return None
 
   def getPiece(self, color, kind, number):
-    if not self.head:
-      logging.debug('Hive.getPiece: no head')
-      return None
-    return self.findPiece(None, self.head, color, kind, number)
-
-  def findPiece(self, previousSibling, piece, color, kind, number):
-    logging.debug('Hive.findPiece: ' + piece.getNotation() + ', color=' + color + ', kind=' + kind + ', number=' + number)
-
-    if piece.color == color and piece.kind == kind and str(piece.number) == number:
-      logging.debug('Hive.findPiece: matched')
-      return piece;
-
-    siblings = piece.getSiblings()
-    for sibling in siblings:
-      if sibling != previousSibling: #stops circular references
-        return self.findPiece(piece, sibling, color, kind, number)
-
-    return None
+    for key in self.board.keys():
+      for piece in self.board[key]:
+        if piece.color == color and piece.kind == kind and str(piece.number) == number:
+          return piece
+    return None 
   
-
   def putdownPiece(self, piece, relativePiece, relativePosition):
     logging.debug('Hive.putdownPiece: piece=' + piece.getNotation())
-    if relativePiece: 
+
+    newCoordinates = (0,0,0)
+    if relativePiece:
       logging.debug('Hive.putdownPiece: relativePiece=' + relativePiece.getNotation())
-    if relativePosition:
       logging.debug('Hive.putdownPiece: relativePosition=' + relativePosition)
 
-    if not self.head or not relativePiece:
-      self.head = piece
-      logging.debug('Hive.putdownPiece: reset head')
-    else:
+      relativeCoordinates = relativePiece.coordinates
       if relativePosition == Hive.TOPRIGHT:
-        relativePiece.topRightSibling = piece
-        piece.bottomLeftSibling = relativePiece
         logging.debug('Hive.putdownPiece: TOPRIGHT')
+        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] - 1, 0)
       elif relativePosition == Hive.RIGHT:
-        relativePiece.rightSibling = piece
-        piece.leftSibling = relativePiece
         logging.debug('Hive.putdownPiece: RIGHT')
+        newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1], 0)
       elif relativePosition == Hive.BOTTOMRIGHT:
-        relativePiece.bottomRightSibling = piece
-        piece.topLeftSibling = relativePiece
         logging.debug('Hive.putdownPiece: BOTTOMRIGHT')
-      elif relativePosition == Hive.TOPLEFT:
-        relativePiece.topLeftSibling = piece
-        piece.bottomRightSibling = relativePiece
-        logging.debug('Hive.putdownPiece: TOPLEFT')
-      elif relativePosition == Hive.LEFT:
-        relativePiece.leftSibling = piece
-        piece.rightSibling = relativePiece
-        logging.debug('Hive.putdownPiece: LEFT')
+        newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1] + 1, 0)
       elif relativePosition == Hive.BOTTOMLEFT:
-        relativePiece.bottomLeftSibling = piece
-        piece.topRightSibling = relativePiece
         logging.debug('Hive.putdownPiece: BOTTOMLEFT')
+        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] + 1, 0)
+      elif relativePosition == Hive.LEFT:
+        logging.debug('Hive.putdownPiece: LEFT')
+        newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1], 0)
+      elif relativePosition == Hive.TOPLEFT:
+        logging.debug('Hive.putdownPiece: TOPLEFT')
+        newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1] - 1, 0)
       elif relativePosition == Hive.COVER:
-        relativePiece.coveringSibling = piece
-        piece.coveredSibling = relativePiece
         logging.debug('Hive.putdownPiece: COVER')
+        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1], relativeCoordinates[2] + 1)
+
+    key = self.getBoardKey(newCoordinates)
+    if self.board.has_key(key):
+      z = -1
+      for p in self.board[key]:
+        z = max(p.coordinates[2], z)
+      z += 1
+      self.board[key].append(piece)
+    else:
+      self.board[key] = [piece]
+
+    piece.coordinates = newCoordinates
+
+
+
+"""
+  Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
+
+   0123456789012345
+  0   / \ / \ / \                   
+  1  | . | . | . |  0
+  2 / \ / \ / \ /  
+  3| . | * | .  1
+  4 \ / \ /    
+   0   1   2 
+
+  Char array indices are on the left and top axes, hex indices on the bottom and right axies
+  hex   -> char
+  (0,0) -> (4,1)
+  (1,0) -> (8,1)
+  (2,0) -> (12,1)
+  (0,1) -> (2,3)
+  (1,1) -> (6,3)
+  (2,1) -> (10,3)
+
+  sx = 4*x - 2*y + 2*h
+  sy = 2*y + 1
+
+"""
+  def printBoard(self):
+    #debug print out all keys and pairs
+    logging.debug('Hive.printBoard: board=' + str(self.board))
+
+
+    # get max and min x/y values
+    # iterate through all x,y printing empty piece or top most piece
+    limits = self.getBoardLimits()
+    limits[0] -= 1
+    limits[1] -= 1
+    limits[2] += 1
+    limits[3] += 1
+    width = limits[2] - limits[0] + 1
+    height = limits[3] - limits[1] + 1
+    #logging.debug('Hive.printBoard: limits=' + str(limits) + ', dims=' + str(width) + 'x' + str(height))
+
+    # build a 2D array of chars that will eventually be printed
+    s = [];
+    for i in range (2 * height):
+      s.append([' '] * (4 * width + 2 * height))
+
+    #logging.debug('Hive.printBoard: s_dims=' + str(len(s[0])) + 'x' + str(len(s)))
+
+    for y in range(limits[1], limits[3] + 1): # height/rows
+      absy = y - limits[1]
+      sy = 2 * absy + 1 #magic mapping formula
+
+      for x in range(limits[0], limits[2] + 1): # width/columns
+        absx = x - limits[0]
+        sx = 4 * absx - 2 * absy + 2 * height #magic mapping formula
+        #logging.debug('Hive.printBoard: (x,y)=(' + str(x) + ',' + str(y) + '), (absx,absy)=' + str(absx) + ',' + str(absy) + '), (sx,sy)=' + str(sx) + ',' + str(sy) + ')')
+        key = self.getBoardKey((x, y))
+        if self.board.has_key(key):
+          piece = self.board[key][len(self.board[key]) - 1]
+          s[sy][sx] = piece.getPbemNotation()
+          s[sy-1][sx-1] = '/'
+          s[sy][sx-2] = '|'
+          s[sy+1][sx-1] = '\\'
+          s[sy+1][sx+1] = '/'
+          s[sy][sx+2] = '|'
+          s[sy-1][sx+1] = '\\'
+        else:
+          s[sy][sx] = '.'
+        
+
+    for si in s:
+      print ''.join(si)
+
+  def getBoardLimits(self):
+    limits = [0, 0, 0, 0] # xmin, ymin, xmax, ymax
+    for key in self.board.keys():
+      for piece in self.board[key]:
+        limits[0] = min(limits[0], piece.coordinates[0])
+        limits[1] = min(limits[1], piece.coordinates[1])
+        limits[2] = max(limits[2], piece.coordinates[0])
+        limits[3] = max(limits[3], piece.coordinates[1])
+    return limits 
 
       
 class Game:
@@ -280,7 +357,6 @@ class Game:
 
     # play the piece
     self.hive.putdownPiece(piece, relativePiece, relativePosition)
-    logging.debug('Game.makeMove piece putdown, len(piece.getSiblings())=' + str(len(piece.getSiblings())))
 
     # flip current player
     if self.currentPlayer == self.whitePlayer:
@@ -294,11 +370,14 @@ class Game:
   def getMoveListCsv(self):
     return ','.join(map(str, self.moveList))
 
+  def printBoard(self):
+    self.hive.printBoard()
+
 
 def main():
     game = Game()
 
-    print ('HiveAI Framework v0.1')
+    print ('Hive AI Framework')
     print ('-------------------')
     print 
 
@@ -308,8 +387,8 @@ def main():
       if enteredMove == 'exit':
         break
       game.makeMove(enteredMove)
-      print ("This is the current move list:")
-      print (game.getMoveListCsv())
+      print
+      game.printBoard()
       print
 
 
