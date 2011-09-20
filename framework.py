@@ -1,5 +1,8 @@
 import sys
 import re
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class Piece:
@@ -17,6 +20,8 @@ class Piece:
     self.coveredSibling = None
 
   def pickup(self):
+    logging.debug('Piece.pickup: ' + self.getNotation());
+
     if self.topLeftSibling:
       self.topLeftSibling.bottomRightSibling = None
       self.topLeftSibling = None
@@ -62,6 +67,7 @@ class Piece:
     if self.coveredSibling:
       siblings.append(self.coveredSibling)
 
+    logging.debug('Piece.getSiblings found ' + str(len(siblings)) + ' siblings.')
     return siblings
 
   def getFirstSibling(self):
@@ -69,6 +75,9 @@ class Piece:
     if len(siblings) > 0:
       return siblings[0]
     return None
+
+  def getNotation(self):
+    return self.color + self.kind + str(self.number)
 
 
 class QueenBeePiece(Piece):
@@ -133,13 +142,14 @@ class Pile:
     piece = None
     if self.pieces.has_key(key):
       piece = self.pieces[key]
-      self.pieces[key] = None
+      del self.pieces[key]
+      logging.debug("Pile.pickupPiece: " + piece.getNotation())
     return piece
 
 
 class Player:
   def __init__(self, color):
-    self.pile = Pile(color);
+    self.pile = Pile(color[0]);
     self.color = color;
 
   def pickupPiece(self, color, kind, number):
@@ -153,58 +163,75 @@ class Hive:
     self.head = None
 
   def pickupPiece(self, color, kind, number):
-    piece = getPiece(color, kind, number)
+    logging.debug('Hive.pickupPiece: color=' + color + ', kind=' + kind + ', number=' + number)
+    piece = self.getPiece(color, kind, number)
     if piece:
       if piece == self.head:
         self.head = piece.getFirstSibling()
       piece.pickup();
-    return None
+      logging.debug("Hive.pickupPiece: " + piece.getNotation())
+    return piece
 
   def getPiece(self, color, kind, number):
     if not self.head:
+      logging.debug('Hive.getPiece: no head')
       return None
     return self.findPiece(None, self.head, color, kind, number)
 
   def findPiece(self, previousSibling, piece, color, kind, number):
-    if piece.color == color and piece.kind == kind and piece.number == number:
+    logging.debug('Hive.findPiece: ' + piece.getNotation() + ', color=' + color + ', kind=' + kind + ', number=' + number)
+
+    if piece.color == color and piece.kind == kind and str(piece.number) == number:
+      logging.debug('Hive.findPiece: matched')
       return piece;
 
     siblings = piece.getSiblings()
     for sibling in siblings:
-      if (sibling != previousSibling): #stops circular references
-        return self.findPiece(previousSibling, sibling, color, kind, number)
+      if sibling != previousSibling: #stops circular references
+        return self.findPiece(piece, sibling, color, kind, number)
 
     return None
   
 
   def putdownPiece(self, piece, relativePiece, relativePosition):
+    logging.debug('Hive.putdownPiece: piece=' + piece.getNotation())
+    if relativePiece: 
+      logging.debug('Hive.putdownPiece: relativePiece=' + relativePiece.getNotation())
+    if relativePosition:
+      logging.debug('Hive.putdownPiece: relativePosition=' + relativePosition)
+
     if not self.head or not relativePiece:
       self.head = piece
+      logging.debug('Hive.putdownPiece: reset head')
     else:
       if relativePosition == Hive.TOPRIGHT:
         relativePiece.topRightSibling = piece
         piece.bottomLeftSibling = relativePiece
+        logging.debug('Hive.putdownPiece: TOPRIGHT')
       elif relativePosition == Hive.RIGHT:
         relativePiece.rightSibling = piece
         piece.leftSibling = relativePiece
+        logging.debug('Hive.putdownPiece: RIGHT')
       elif relativePosition == Hive.BOTTOMRIGHT:
         relativePiece.bottomRightSibling = piece
         piece.topLeftSibling = relativePiece
+        logging.debug('Hive.putdownPiece: BOTTOMRIGHT')
       elif relativePosition == Hive.TOPLEFT:
         relativePiece.topLeftSibling = piece
         piece.bottomRightSibling = relativePiece
+        logging.debug('Hive.putdownPiece: TOPLEFT')
       elif relativePosition == Hive.LEFT:
         relativePiece.leftSibling = piece
         piece.rightSibling = relativePiece
+        logging.debug('Hive.putdownPiece: LEFT')
       elif relativePosition == Hive.BOTTOMLEFT:
         relativePiece.bottomLeftSibling = piece
         piece.topRightSibling = relativePiece
+        logging.debug('Hive.putdownPiece: BOTTOMLEFT')
       elif relativePosition == Hive.COVER:
         relativePiece.coveringSibling = piece
         piece.coveredSibling = relativePiece
-
-        
-
+        logging.debug('Hive.putdownPiece: COVER')
 
       
 class Game:
@@ -228,6 +255,7 @@ class Game:
     if not piece:
       piece = self.hive.pickupPiece(pieceColor, pieceKind, pieceNumber)
 
+    logging.debug('Game.makeMove picked up: ' + piece.getNotation())
 
     # check if the piece is being played relative to another
     relativePiece = None
@@ -238,19 +266,21 @@ class Game:
       relativeKind = relativeMatches.group('kind')
       relativeNumber = relativeMatches.group('number')
       relativePiece = self.hive.getPiece(relativeColor, relativeKind, relativeNumber)
+      logging.debug(relativeMatches.groupdict())
+      logging.debug('Game.makeMove found relative piece: ' + relativePiece.getNotation())
 
       leftMove = relativeMatches.group('lm')
       rightMove = relativeMatches.group('rm')
-      if not leftMove and not rightMove:
-        relativePostion = '  '
-      elif not leftMove: 
-        relativePostion = ' ' + rightMove
+      if leftMove == '' and rightMove == '':
+        relativePosition = '  '
+      elif leftMove == '': 
+        relativePosition = ' ' + rightMove
       else:
         relativePosition = leftMove + ' '
 
     # play the piece
     self.hive.putdownPiece(piece, relativePiece, relativePosition)
-
+    logging.debug('Game.makeMove piece putdown, len(piece.getSiblings())=' + str(len(piece.getSiblings())))
 
     # flip current player
     if self.currentPlayer == self.whitePlayer:
@@ -274,7 +304,7 @@ def main():
 
     enteredMove = None
     while True:
-      enteredMove = raw_input('Enter a move: ');
+      enteredMove = raw_input(game.currentPlayer.color.capitalize() + '\'s turn, enter a move: ');
       if enteredMove == 'exit':
         break
       game.makeMove(enteredMove)
