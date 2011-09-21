@@ -67,7 +67,7 @@ class GrasshopperPiece(Piece):
 class Pile:
   def __init__(self, color):
     """
-    Build dictionary of pieces available for use
+      Build dictionary of pieces available for use
     """
     self.pieces = dict()
     self.setupStartingPieces(color)
@@ -228,30 +228,30 @@ class Hive:
 
 
 
-"""
-  Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
+  """
+    Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
 
-   0123456789012345
-  0   / \ / \ / \                   
-  1  | . | . | . |  0
-  2 / \ / \ / \ /  
-  3| . | * | .  1
-  4 \ / \ /    
-   0   1   2 
+     0123456789012345
+    0   / \ / \ / \                   
+    1  | . | . | . |  0
+    2 / \ / \ / \ /  
+    3| . | * | .  1
+    4 \ / \ /    
+     0   1   2 
 
-  Char array indices are on the left and top axes, hex indices on the bottom and right axies
-  hex   -> char
-  (0,0) -> (4,1)
-  (1,0) -> (8,1)
-  (2,0) -> (12,1)
-  (0,1) -> (2,3)
-  (1,1) -> (6,3)
-  (2,1) -> (10,3)
+    Char array indices are on the left and top axes, hex indices on the bottom and right axies
+    hex   -> char
+    (0,0) -> (4,1)
+    (1,0) -> (8,1)
+    (2,0) -> (12,1)
+    (0,1) -> (2,3)
+    (1,1) -> (6,3)
+    (2,1) -> (10,3)
 
-  sx = 4*x - 2*y + 2*h
-  sy = 2*y + 1
+    sx = 4*x - 2*y + 2*h
+    sy = 2*y + 1
 
-"""
+  """
   def printBoard(self):
     #debug print out all keys and pairs
     logging.debug('Hive.printBoard: board=' + str(self.board))
