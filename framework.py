@@ -38,7 +38,7 @@ class QueenBeePiece(Piece):
       return hive.getEntryCoordinatesList(self.color)
 
     # beetle pinned
-    if not piece == hive.getTopPieceAtCoordinates(self.coordinates):
+    if not self == hive.getTopPieceAtCoordinates(self.coordinates):
       logging.debug('Piece.getPossibleCoordinatesList: beetle pinned')
       return []
 
@@ -48,16 +48,26 @@ class QueenBeePiece(Piece):
       return []
 
     # can move 1 empty hex away, but cannot enter gates
-    hive.pickupPiece(self)
-    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
-    borderCoordinatesList.remove(self.coordinates)
-    hive.putdownPiece(self, self.coordinates)
-
     possibleCoordinatesList = []
-    for borderCoordinates in borderCoordinatesList:
-      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
-        possibleCoordinatesList.append(borderCoordinates)
-    return possibleCoordinatesList
+    
+    # get adjacencies
+    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
+
+    # partition into occupied and free (exclude) gates
+    occupiedAdjacentCoordinatesList = []
+    freeAdjacentCoordinatesList = []
+    for adjacentCoordinates in adjacentCoordinatesList:
+      if hive.getTopPieceAtCoordinates(adjacentCoordinates):
+        occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
+      elif not hive.areCoordinatesInGate(adjacentCoordinates):
+        freeAdjacentCoordinatesList.append(adjacentCoordinates)
+
+    # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+    for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
+      for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
+        if hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
+          possibleCoordinatesList.append(freeAdjacentCoordinates)
+          break
 
     return possibleCoordinatesList
 
@@ -76,7 +86,7 @@ class SpiderPiece(Piece):
       return hive.getEntryCoordinatesList(self.color)
 
     # beetle pinned
-    if not piece == hive.getTopPieceAtCoordinates(self.coordinates):
+    if not self == hive.getTopPieceAtCoordinates(self.coordinates):
       logging.debug('Piece.getPossibleCoordinatesList: beetle pinned')
       return []
 
@@ -85,20 +95,41 @@ class SpiderPiece(Piece):
       logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
       return []
 
-    #TODO
     # can move 3 emtpy hex away, but cannot enter gates and cannot backtrack
+    possibleCoordinatesList = []
+    # find all 3 node segments in the graph that is the non-gate border nodes starting at the current node
     hive.pickupPiece(self)
-    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
-    borderCoordinatesList.remove(self.coordinates)
+    self._visitCoordinate(self.coordinates, 0, [], possibleCoordinatesList, hive)
     hive.putdownPiece(self, self.coordinates)
 
-    possibleCoordinatesList = []
-    for borderCoordinates in borderCoordinatesList:
-      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
-        possibleCoordinatesList.append(borderCoordinates)
     return possibleCoordinatesList
 
-    return possibleCoordinatesList
+  def _visitCoordinate(self, coordinates, depth, currentPath, possibleCoordinatesList, hive):
+    if depth == 3:
+      if not coordinates in possibleCoordinatesList:
+        possibleCoordinatesList.append(coordinates)
+        return
+
+    currentPath.append(coordinates)
+
+    # get adjacencies
+    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
+
+    # partition into occupied and free (exclude) gates
+    occupiedAdjacentCoordinatesList = []
+    freeAdjacentCoordinatesList = []
+    for adjacentCoordinates in adjacentCoordinatesList:
+      if hive.getTopPieceAtCoordinates(adjacentCoordinates):
+        occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
+      elif not hive.areCoordinatesInGate(adjacentCoordinates):
+        freeAdjacentCoordinatesList.append(adjacentCoordinates)
+    
+    for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
+      for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
+        if not freeAdjacentCoordinates in currentPath and hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
+          self._visitCoordinate(freeAdjacentCoordinates, depth + 1, currentPath, possibleCoordinatesList, hive)
+          break
+
 
 class BeetlePiece(Piece):
   """
@@ -114,7 +145,7 @@ class BeetlePiece(Piece):
       return hive.getEntryCoordinatesList(self.color)
 
     # beetle pinned
-    if not piece == hive.getTopPieceAtCoordinates(self.coordinates):
+    if not self == hive.getTopPieceAtCoordinates(self.coordinates):
       logging.debug('Piece.getPossibleCoordinatesList: beetle pinned')
       return []
 
@@ -127,15 +158,26 @@ class BeetlePiece(Piece):
     if self.coordinates[2] > 0: # beetle on top: can move to any adjcent hex
       possibleCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
-      hive.pickupPiece(self)
-      borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
-      borderCoordinatesList.remove(self.coordinates)
-      hive.putdownPiece(self, self.coordinates)
-
+      # get adjacencies
       adjacentCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
+
+      # partition into occupied and free (exclude) gates
+      occupiedAdjacentCoordinatesList = []
+      freeAdjacentCoordinatesList = []
       for adjacentCoordinates in adjacentCoordinatesList:
-        if adjacentCoordinates in borderCoordinatesList or hive.getTopPieceAtCoordinates(adjacentCoordinates):
-          possibleCoordinatesList.append(adjacentCoordinates) # note: we only care about x, y here, placement will fix the z
+        if hive.getTopPieceAtCoordinates(adjacentCoordinates):
+          occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
+        elif not hive.areCoordinatesInGate(adjacentCoordinates):
+          freeAdjacentCoordinatesList.append(adjacentCoordinates)
+
+      # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+      for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
+        for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
+          if hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
+            possibleCoordinatesList.append(freeAdjacentCoordinates)
+            break
+
+      possibleCoordinatesList.extend(occupiedAdjacentCoordinatesList)
 
     return possibleCoordinatesList
 
@@ -153,7 +195,7 @@ class AntPiece(Piece):
       return hive.getEntryCoordinatesList(self.color)
 
     # beetle pinned
-    if not piece == hive.getTopPieceAtCoordinates(self.coordinates):
+    if not self == hive.getTopPieceAtCoordinates(self.coordinates):
       logging.debug('Piece.getPossibleCoordinatesList: beetle pinned')
       return []
 
@@ -184,7 +226,7 @@ class GrasshopperPiece(Piece):
       return hive.getEntryCoordinatesList(self.color)
 
     # beetle pinned
-    if not piece == hive.getTopPieceAtCoordinates(self.coordinates):
+    if not self == hive.getTopPieceAtCoordinates(self.coordinates):
       logging.debug('Piece.getPossibleCoordinatesList: beetle pinned')
       return []
 
@@ -281,7 +323,7 @@ class Player:
     self.pieces['G3'] = GrasshopperPiece(color, 3)
 
   def pickupPiece(self, (color, kind, number)):
-    key = kind + number
+    key = kind + str(number)
     piece = None
     if self.pieces.has_key(key):
       piece = self.pieces[key]
@@ -290,11 +332,11 @@ class Player:
     return piece
 
   def putdownPiece(self, piece):
-    key = piece.kind + piece.number
+    key = piece.kind + str(piece.number)
     self.pieces[key] = piece
 
   def hasPlayed(self, kind, number = ''):
-    key = kind + number
+    key = kind + str(number)
     return not self.pieces.has_key(key)
 
 
