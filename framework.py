@@ -59,12 +59,54 @@ class SpiderPiece(Piece):
   def __init__(self, color, number):
     Piece.__init__(self, color, 'S', number)
 
+  def getPossibleCoordinatesList(self, hive):
+    # not on board yet
+    if self.coordinates == (None,None,None):
+      logging.debug('Piece.getPossibleCoordinatesList: not on board')
+      return hive.getEntryCoordinatesList(self.color)
+
+    # if picking up breaks hive: 0 possible coordinates
+    if hive.isBrokenWithoutPiece(self):
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    # TODO IMPLEMENT
+    # can move 1 hex from current coordinates, but cannot enter gates
+    possibleCoordinatesList = []
+    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
+    for borderCoordinates in borderCoordinatesList:
+      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
+        possibleCoordinatesList.append(borderCoordinates)
+
+    return possibleCoordinatesList
+
 class BeetlePiece(Piece):
   """
     The Beetle piece. It moves exactly one hexes at a time, but can cover other pieces.
   """
   def __init__(self, color, number):
     Piece.__init__(self, color, 'B', number)
+
+  def getPossibleCoordinatesList(self, hive):
+    # not on board yet
+    if self.coordinates == (None,None,None):
+      logging.debug('Piece.getPossibleCoordinatesList: not on board')
+      return hive.getEntryCoordinatesList(self.color)
+
+    # if picking up breaks hive: 0 possible coordinates
+    if hive.isBrokenWithoutPiece(self):
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    # TODO IMPLEMENT
+    # can move 1 hex from current coordinates, but cannot enter gates
+    possibleCoordinatesList = []
+    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
+    for borderCoordinates in borderCoordinatesList:
+      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
+        possibleCoordinatesList.append(borderCoordinates)
+
+    return possibleCoordinatesList
 
 class AntPiece(Piece):
   """
@@ -73,12 +115,110 @@ class AntPiece(Piece):
   def __init__(self, color, number):
     Piece.__init__(self, color, 'A', number)
 
+  def getPossibleCoordinatesList(self, hive):
+    # not on board yet
+    if self.coordinates == (None,None,None):
+      logging.debug('Piece.getPossibleCoordinatesList: not on board')
+      return hive.getEntryCoordinatesList(self.color)
+
+    # if picking up breaks hive: 0 possible coordinates
+    if hive.isBrokenWithoutPiece(self):
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    # TODO IMPLEMENT
+    # can move 1 hex from current coordinates, but cannot enter gates
+    possibleCoordinatesList = []
+    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
+    for borderCoordinates in borderCoordinatesList:
+      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
+        possibleCoordinatesList.append(borderCoordinates)
+
+    return possibleCoordinatesList
+
 class GrasshopperPiece(Piece):
   """
     The Grasshopper piece. It moves in a straight line over other pieces.
   """
   def __init__(self, color, number):
     Piece.__init__(self, color, 'G', number)
+
+  def getPossibleCoordinatesList(self, hive):
+    # not on board yet
+    if self.coordinates == (None,None,None):
+      logging.debug('Piece.getPossibleCoordinatesList: not on board')
+      return hive.getEntryCoordinatesList(self.color)
+
+    # if picking up breaks hive: 0 possible coordinates
+    if hive.isBrokenWithoutPiece(self):
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    # can move in straight lines from current hex, but must stop at first space 
+    # in each direction, starting one occupied space over, find first borderCoordinates
+    possibleCoordinatesList = []
+
+    #(x, y-1) TOPRIGHT
+    coordinates = (self.coordinates[0], self.coordinates[1] - 1, 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0], coordinates[1] - 1, 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    #(x+1, y) RIGHT
+    coordinates = (self.coordinates[0] + 1, self.coordinates[1], 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0] + 1, coordinates[1], 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    #(x+1, y+1) BOTTOMRIGHT
+    coordinates = (self.coordinates[0] + 1, self.coordinates[1] + 1, 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0] + 1, coordinates[1] + 1, 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    #(x, y+1) BOTTOMLEFT
+    coordinates = (self.coordinates[0], self.coordinates[1] + 1, 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0], coordinates[1] + 1, 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    #(x-1, y) LEFT
+    coordinates = (self.coordinates[0] - 1, self.coordinates[1], 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0] - 1, coordinates[1], 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    #(x-1, y-1) TOPLEFT
+    coordinates = (self.coordinates[0] - 1, self.coordinates[1] - 1, 0)
+    piece = hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      while True:
+        coordinates = (coordinates[0] - 1, coordinates[1] - 1, 0)
+        if not hive.getTopPieceAtCoordinates(coordinates):
+          possibleCoordinatesList.append(coordinates)
+          break
+
+    return possibleCoordinatesList
 
 
 
@@ -107,7 +247,7 @@ class Player:
     if self.pieces.has_key(key):
       piece = self.pieces[key]
       del self.pieces[key]
-      logging.debug("Pile.pickupPiece: " + piece.getNotation())
+      logging.debug("Pile.pickupPiece: " + str(piece))
     return piece
 
   def putdownPiece(self, piece):
@@ -199,8 +339,8 @@ class Hive:
 
   def getPiecesAtCoordinates(self, coordinates):
     key = self.getBoardKey(coordinates)
-    if self.board.has_key(coordinatesKey):
-      return self.board[coordinatesKey]
+    if self.board.has_key(key):
+      return self.board[key]
     return []
 
   def isBrokenWithoutPiece(self, piece):
@@ -232,12 +372,16 @@ class Hive:
     return not len(visitedPieces) == self.getNumberOfPieces() - 1
 
   def visitPiece(self, piece, visitedPieces):
-    for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
-      topPiece = self.getTopPieceAtCoordinates(piece.coordinates)
+    logging.debug('Hive.visitPice: visiting = ' + str(piece))
+
+    adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
+    
+    for coordinates in adjacentCoordinatesList:
+      topPiece = self.getTopPieceAtCoordinates(coordinates)
       if topPiece and not visitedPieces.has_key(topPiece.getNotation()):
         for p in self.getPiecesAtCoordinates(coordinates):
           visitedPieces[p.getNotation()] = 1
-        self.visitPiece(self, topPiece, visitedPieces)
+        self.visitPiece(topPiece, visitedPieces)
 
   def getBorderCoordinatesList(self, includeGates):
     coordinatesList = []
@@ -319,11 +463,11 @@ class Hive:
 
   
   def getRelativeCoordinates(self, piece, relativePiece, relativePosition):
-    logging.debug('Hive.putdownPiece: piece=' + piece.getNotation())
+    logging.debug('Hive.putdownPiece: piece=' + str(piece))
 
     newCoordinates = (0,0,0)
     if relativePiece:
-      logging.debug('Hive.putdownPiece: relativePiece=' + relativePiece.getNotation())
+      logging.debug('Hive.putdownPiece: relativePiece=' + str(relativePiece))
       logging.debug('Hive.putdownPiece: relativePosition=' + relativePosition)
 
       relativeCoordinates = relativePiece.coordinates
