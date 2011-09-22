@@ -12,10 +12,6 @@ class Piece:
     self.number = number
     self.coordinates = (None, None, None) #x,y,z
 
-  def pickup(self):
-    logging.debug('Piece.pickup: ' + self.getNotation());
-    self.coordinates = (None, None, None)
-
   def getNotation(self):
     return self.color + self.kind + str(self.number)#+ ' @ ' + str(self.coordinates)
 
@@ -34,6 +30,27 @@ class QueenBeePiece(Piece):
   """
   def __init__(self, color):
     Piece.__init__(self, color, 'Q', '')
+
+  def getPossibleCoordinatesList(self, hive):
+    # not on board yet
+    if self.coordinates == (None,None,None):
+      logging.debug('Piece.getPossibleCoordinatesList: not on board')
+      return hive.getEntryCoordinatesList(self.color)
+
+    # if picking up breaks hive: 0 possible coordinates
+    if hive.isBrokenWithoutPiece(self):
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    # can move 1 hex from current coordinates, but cannot enter gates
+    possibleCoordinatesList = []
+    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
+    for borderCoordinates in borderCoordinatesList:
+      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
+        possibleCoordinatesList.append(borderCoordinates)
+
+    return possibleCoordinatesList
+
 
 class SpiderPiece(Piece):
   """
@@ -64,28 +81,27 @@ class GrasshopperPiece(Piece):
     Piece.__init__(self, color, 'G', number)
 
 
-class Pile:
+
+class Player:
   def __init__(self, color):
-    """
-      Build dictionary of pieces available for use
-    """
     self.pieces = dict()
-    self.setupStartingPieces(color)
+    self.setupStartingPieces(color[0])
+    self.color = color
 
   def setupStartingPieces(self, color):
-    self.pieces['Q'] = QueenBeePiece(color);
-    self.pieces['S1'] = SpiderPiece(color, 1);
-    self.pieces['S2'] = SpiderPiece(color, 2);
-    self.pieces['B1'] = BeetlePiece(color, 1);
-    self.pieces['B2'] = BeetlePiece(color, 2);
-    self.pieces['A1'] = AntPiece(color, 1);
-    self.pieces['A2'] = AntPiece(color, 2);
-    self.pieces['A3'] = AntPiece(color, 3);
-    self.pieces['G1'] = GrasshopperPiece(color, 1);
-    self.pieces['G2'] = GrasshopperPiece(color, 2);
-    self.pieces['G3'] = GrasshopperPiece(color, 3);
-  
-  def pickupPiece(self, color, kind, number):
+    self.pieces['Q'] = QueenBeePiece(color)
+    self.pieces['S1'] = SpiderPiece(color, 1)
+    self.pieces['S2'] = SpiderPiece(color, 2)
+    self.pieces['B1'] = BeetlePiece(color, 1)
+    self.pieces['B2'] = BeetlePiece(color, 2)
+    self.pieces['A1'] = AntPiece(color, 1)
+    self.pieces['A2'] = AntPiece(color, 2)
+    self.pieces['A3'] = AntPiece(color, 3)
+    self.pieces['G1'] = GrasshopperPiece(color, 1)
+    self.pieces['G2'] = GrasshopperPiece(color, 2)
+    self.pieces['G3'] = GrasshopperPiece(color, 3)
+
+  def pickupPiece(self, (color, kind, number)):
     key = kind + number
     piece = None
     if self.pieces.has_key(key):
@@ -94,15 +110,13 @@ class Pile:
       logging.debug("Pile.pickupPiece: " + piece.getNotation())
     return piece
 
+  def putdownPiece(self, piece):
+    key = piece.kind + piece.number
+    self.pieces[key] = piece
 
-class Player:
-  def __init__(self, color):
-    self.pile = Pile(color[0]);
-    self.color = color;
-
-  def pickupPiece(self, color, kind, number):
-    return self.pile.pickupPiece(color, kind, number)
-
+  def hasPlayed(self, kind, number = ''):
+    key = kind + number
+    return not self.pieces.has_key(key)
 
 
 """                                   
@@ -134,7 +148,7 @@ class Player:
 
 
   The hive is not limited to this 10 by 10 board, the first piece will be placed at (0,0) and it will expand infinitely in both the positive and negative directions. 
-  This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the coordinantes we assume the piece with max(z)).
+  This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the coordinates we assume the piece with max(z)).
 
   (x, y) connects to:
     (x, y-1) TOPRIGHT
@@ -163,27 +177,148 @@ class Hive:
   def getBoardKey(self, coordinates):
     return str(coordinates[0]) + ',' + str(coordinates[1])
 
-  def pickupPiece(self, color, kind, number):
-    piece = self.getPiece(color, kind, number)
-    if piece:
-      # remove space from board or remove piece from space (if there are other pieces on it)
-      key = self.getBoardKey(piece.coordinates)
-      if len(self.board[key]) == 1:
-        del self.board[key]
-      else:
-        self.board[key].remove(piece)
-      piece.pickup()
-      return piece
+  def getNumberOfPieces(self):
+    count = 0
+    for key, value in self.board.iteritems():
+      count += len(value)
+    return count
+
+  def getAdjacentCoordinatesList(self, coordinates):
+    return [(coordinates[0], coordinates[1] - 1, 0),      # (x, y-1)    TOPRIGHT
+            (coordinates[0] + 1, coordinates[1], 0),      # (x+1, y)    RIGHT
+            (coordinates[0] + 1, coordinates[1] + 1, 0),  # (x+1, y+1)  BOTTOMRIGHT
+            (coordinates[0], coordinates[1] + 1, 0),      # (x, y+1)    BOTTOMLEFT
+            (coordinates[0] - 1, coordinates[1], 0),      # (x-1, y)    LEFT
+            (coordinates[0] - 1, coordinates[1] - 1, 0)] # (x-1, y-1)  TOPLEFT
+
+  def getTopPieceAtCoordinates(self, coordinates):
+    key = self.getBoardKey(coordinates)
+    if self.board.has_key(key):
+      return self.board[key][len(self.board[key]) - 1]
     return None
 
-  def getPiece(self, color, kind, number):
+  def getPiecesAtCoordinates(self, coordinates):
+    key = self.getBoardKey(coordinates)
+    if self.board.has_key(coordinatesKey):
+      return self.board[coordinatesKey]
+    return []
+
+  def isBrokenWithoutPiece(self, piece):
+    if len(self.board) == 0:
+      logging.debug('Hive.isBrokenWithoutPiece: no pieces played')
+      return False
+  
+    visitedPieces = dict()
+
+
+    self.pickupPiece(piece)
+
+    logging.debug('Hive.isBrokenWithoutPiece: start state, board = ' + str(self.board))
+
+    # get a random piece
+    key = self.board.keys()[0]
+    rootPiece = self.board[key][len(self.board[key]) - 1]
+    for p in self.board[key]: visitedPieces[p.getNotation()] = 1
+
+    self.visitPiece(rootPiece, visitedPieces)
+
+    self.putdownPiece(piece, piece.coordinates)
+
+    logging.debug('Hive.isBrokenWithoutPiece: end state, board = ' + str(self.board))
+    logging.debug('Hive.isBrokenWithoutPiece: end state, visitedPieces = ' + str(visitedPieces))
+    logging.debug('Hive.isBrokenWithoutPiece: end state, numberOFPieces = ' + str(self.getNumberOfPieces()))
+
+    # if all pieces were vistited the hive is still connected
+    return not len(visitedPieces) == self.getNumberOfPieces() - 1
+
+  def visitPiece(self, piece, visitedPieces):
+    for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
+      topPiece = self.getTopPieceAtCoordinates(piece.coordinates)
+      if topPiece and not visitedPieces.has_key(topPiece.getNotation()):
+        for p in self.getPiecesAtCoordinates(coordinates):
+          visitedPieces[p.getNotation()] = 1
+        self.visitPiece(self, topPiece, visitedPieces)
+
+  def getBorderCoordinatesList(self, includeGates):
+    coordinatesList = []
+    uniqueCoordinates = dict()
+    
+    for key, pieces in self.board.iteritems():
+      piece = pieces[len(pieces) - 1]
+      for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
+        coordinatesKey = self.getBoardKey(coordinates)
+        if not self.board.has_key(coordinatesKey) and not uniqueCoordinates.has_key(coordinatesKey):
+          if includeGates or not self.areCoordinatesInGate(coordinates):
+            uniqueCoordinates[coordinatesKey] = 1
+            coordinatesList.append(coordinates)
+    
+    return coordinatesList; 
+
+  def getEntryCoordinatesList(self, color):
+    coordinatesList = []
+    uniqueCoordinates = dict()
+
+    
+    for key, pieces in self.board.iteritems():
+      piece = pieces[len(pieces) - 1] 
+
+      adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
+      logging.debug('Hive.getEntryCoordinatesList(' + color + '): piece=' + str(piece))
+      logging.debug('Hive.getEntryCoordinatesList(' + color + '): adjacentCoordinatesList=' + str(adjacentCoordinatesList))
+
+
+      for coordinates in adjacentCoordinatesList: #self.getAdjacentCoordinatesList(piece.coordinates)
+        coordinatesKey = self.getBoardKey(coordinates)
+        if not self.board.has_key(coordinatesKey) and not uniqueCoordinates.has_key(coordinatesKey):
+          if self.getNumberOfPieces() == 1 or self.doCoordinatesOnlyBorderColor(coordinates, color):
+            uniqueCoordinates[coordinatesKey] = 1
+            coordinatesList.append(coordinates)
+
+    if len(coordinatesList) == 0:
+      coordinatesList.append((0, 0, 0))
+
+    logging.debug('Hive.getEntryCoordinatesList(' + color + '): coordinatesList=' + str(coordinatesList))
+
+    return coordinatesList; 
+
+  def doCoordinatesOnlyBorderColor(self, coordinates, color):
+    for coordinates in self.getAdjacentCoordinatesList(coordinates):
+      coordinatesKey = self.getBoardKey(coordinates)
+      if self.board.has_key(coordinatesKey):
+        piece = self.board[coordinatesKey][len(self.board[coordinatesKey]) - 1]
+        if not piece.color == color:
+          return False
+
+    return True
+
+
+  def areCoordinatesInGate(self, coordinates):
+    """ Coordinates must be bordered on 5+ sides """
+    borderCount = 0
+    for coordinates in self.getAdjacentCoordinatesList(coordinates):
+      piece = self.getTopPieceAtCoordinates(coordinates)
+      if piece:
+        borderCount += 1
+
+    return borderCount >= 5
+
+  def areCoordinatesAdjacent(self, firstCoordinates, secondCoordinates):
+    for coordinates in self.getAdjacentCoordinatesList(firstCoordinates):
+      if coordinates[0] == secondCoordinates[0] and coordinates[1] == secondCoordinates[1]:
+        return True
+
+    return False
+
+
+  def getPiece(self, (color, kind, number)):
     for key in self.board.keys():
       for piece in self.board[key]:
         if piece.color == color and piece.kind == kind and str(piece.number) == number:
           return piece
     return None 
+
   
-  def putdownPiece(self, piece, relativePiece, relativePosition):
+  def getRelativeCoordinates(self, piece, relativePiece, relativePosition):
     logging.debug('Hive.putdownPiece: piece=' + piece.getNotation())
 
     newCoordinates = (0,0,0)
@@ -213,18 +348,30 @@ class Hive:
       elif relativePosition == Hive.COVER:
         logging.debug('Hive.putdownPiece: COVER')
         newCoordinates = (relativeCoordinates[0], relativeCoordinates[1], relativeCoordinates[2] + 1)
+    return newCoordinates
 
-    key = self.getBoardKey(newCoordinates)
+
+  def pickupPiece(self, piece):
+    key = self.getBoardKey(piece.coordinates)
+    if len(self.board[key]) == 1:
+      del self.board[key]
+    else:
+      self.board[key].remove(piece)
+
+
+  def putdownPiece(self, piece, coordinates):
+    key = self.getBoardKey(coordinates)
     if self.board.has_key(key):
       z = -1
       for p in self.board[key]:
         z = max(p.coordinates[2], z)
       z += 1
+      coordinates = (coordinates[0], coordinates[1], z)
       self.board[key].append(piece)
     else:
       self.board[key] = [piece]
 
-    piece.coordinates = newCoordinates
+    piece.coordinates = coordinates
 
 
 
@@ -269,7 +416,7 @@ class Hive:
     #logging.debug('Hive.printBoard: limits=' + str(limits) + ', dims=' + str(width) + 'x' + str(height))
 
     # build a 2D array of chars that will eventually be printed
-    s = [];
+    s = []
     for i in range (2 * height):
       s.append([' '] * (4 * width + 2 * height))
 
@@ -318,60 +465,100 @@ class Game:
     self.currentPlayer = self.whitePlayer
     self.hive = Hive()
     self.moveList = []
+    self.turnNumber = 1
 
   def makeMove(self, moveString):
-
-    # parse move string for the piece being placed
-    pieceMatches = re.search('^(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-9]?)', moveString);
-    pieceColor = pieceMatches.group('color')
-    pieceKind = pieceMatches.group('kind')
-    pieceNumber = pieceMatches.group('number')
+    self.validateMoveString(moveString)
 
     # check if the piece hasn't been played yet, otherwise take if from the board
-    piece = self.currentPlayer.pickupPiece(pieceColor, pieceKind, pieceNumber) 
+    pieceAttributes = self.parsePieceAttributes(moveString)
+    piece = self.currentPlayer.pickupPiece(pieceAttributes) 
     if not piece:
-      piece = self.hive.pickupPiece(pieceColor, pieceKind, pieceNumber)
+      piece = self.hive.getPiece(pieceAttributes)
 
-    logging.debug('Game.makeMove picked up: ' + piece.getNotation())
+    # QueenBee validation
+    if self.turnNumber == 5 or self.turnNumber == 6:
+      if not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
+        raise MoveError("You must play your QueenBee in your first 4 turns.")
+      
+    # get list of possible move coordinates
+    possibleCoordinatesList = piece.getPossibleCoordinatesList(self.hive)
 
-    # check if the piece is being played relative to another
+    # get proposed move coordinates
     relativePiece = None
-    relativePosition = None 
-    relativeMatches = re.search(' (?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-9]?)(?P<rm>[\\\/-]?)$', moveString)
-    if relativeMatches:
-      relativeColor = relativeMatches.group('color')
-      relativeKind = relativeMatches.group('kind')
-      relativeNumber = relativeMatches.group('number')
-      relativePiece = self.hive.getPiece(relativeColor, relativeKind, relativeNumber)
-      logging.debug(relativeMatches.groupdict())
-      logging.debug('Game.makeMove found relative piece: ' + relativePiece.getNotation())
+    relativePosition = None
+    relativeAttributes = self.parseRelativeAttributes(moveString)
+    if (relativeAttributes):
+      relativePiece = self.hive.getPiece(relativeAttributes[0])
+      relativePosition = relativeAttributes[1]
+    proposedCoordinates = self.hive.getRelativeCoordinates(piece, relativePiece, relativePosition)
 
-      leftMove = relativeMatches.group('lm')
-      rightMove = relativeMatches.group('rm')
-      if leftMove == '' and rightMove == '':
-        relativePosition = '  '
-      elif leftMove == '': 
-        relativePosition = ' ' + rightMove
-      else:
-        relativePosition = leftMove + ' '
+    # check if valid move
+    if not self.isValidMove(proposedCoordinates, possibleCoordinatesList):
+      if piece.coordinates == (None, None, None):
+        self.currentPlayer.putdownPiece(piece)
+      raise MoveError ("The move you entered is invalid.")
 
-    # play the piece
-    self.hive.putdownPiece(piece, relativePiece, relativePosition)
+    # make the move
+    if not piece.coordinates == (None, None, None):
+      self.hive.pickupPiece(piece)
+    self.hive.putdownPiece(piece, proposedCoordinates)
+  
+    self.turnNumber += 1
+    self.switchCurrentPlayer()
+    self.moveList.append(moveString)
+    
+  def isValidMove(self, proposedCoordinates, possibleCoordinatesList):
+    logging.debug('Game.isValidMove: proposedCoordinates=' + str(proposedCoordinates))
+    logging.debug('Game.isValidMove: possibleCoordinatesList=' + str(possibleCoordinatesList))
 
-    # flip current player
+    for coordinates in possibleCoordinatesList:
+      if coordinates[0] == proposedCoordinates[0] and coordinates[1] == proposedCoordinates[1] and coordinates[2] == proposedCoordinates[2]:
+        return True
+    return False
+
+  def validateMoveString(self, moveString):
+    """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
+    match = re.match('^[bw][ABGQS][0-3]?(?:\\s[\\\/-]?[bw][ABGQS][0-3]?[\\\/-]?)?$', moveString)
+    if not match:
+      raise InputError("I don't understand that move.")
+
+  def parsePieceAttributes(self, moveString):
+    matches = re.search('^(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-3]?)', moveString)
+    return (matches.group('color'), matches.group('kind'), matches.group('number'))
+
+  def parseRelativeAttributes(self, moveString):
+    matches = re.search(' (?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-3]?)(?P<rm>[\\\/-]?)$', moveString)
+    if matches:
+      position = (matches.group('lm') if matches.group('lm') != '' else ' ') + (matches.group('rm') if matches.group('rm') != '' else ' ')
+      return ((matches.group('color'), matches.group('kind'), matches.group('number')), position)
+    return None
+
+
+  def switchCurrentPlayer(self):
     if self.currentPlayer == self.whitePlayer:
       self.currentPlayer = self.blackPlayer
     else:
       self.currentPlayer = self.whitePlayer
-
-    # keep a running list of the played moves
-    self.moveList.append(moveString)
 
   def getMoveListCsv(self):
     return ','.join(map(str, self.moveList))
 
   def printBoard(self):
     self.hive.printBoard()
+
+
+class InputError(Exception):
+  def __init__(self, value):
+      self.value = value
+  def __str__(self):
+      return repr(self.value)
+
+class MoveError(Exception):
+  def __init__(self, value):
+      self.value = value
+  def __str__(self):
+      return repr(self.value)
 
 
 def main():
@@ -383,12 +570,19 @@ def main():
 
     enteredMove = None
     while True:
-      enteredMove = raw_input(game.currentPlayer.color.capitalize() + '\'s turn, enter a move: ');
+      enteredMove = raw_input(game.currentPlayer.color.capitalize() + '\'s turn, enter a move: ')
       if enteredMove == 'exit':
         break
-      game.makeMove(enteredMove)
-      print
-      game.printBoard()
+
+      try:
+        game.makeMove(enteredMove)
+      except InputError as e:
+        print e.value
+      except MoveError as e:
+        print e.value
+      else:
+        game.printBoard()
+
       print
 
 
