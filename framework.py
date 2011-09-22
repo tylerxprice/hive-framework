@@ -126,13 +126,11 @@ class AntPiece(Piece):
       logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
       return []
 
-    # TODO IMPLEMENT
-    # can move 1 hex from current coordinates, but cannot enter gates
-    possibleCoordinatesList = []
-    borderCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
-    for borderCoordinates in borderCoordinatesList:
-      if hive.areCoordinatesAdjacent(self.coordinates, borderCoordinates):
-        possibleCoordinatesList.append(borderCoordinates)
+    # can move to any non-gate hex around hive
+    hive.pickupPiece(self)
+    possibleCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
+    possibleCoordinatesList.remove(self.coordinates)
+    hive.putdownPiece(self, self.coordinates)
 
     return possibleCoordinatesList
 
