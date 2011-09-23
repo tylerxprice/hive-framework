@@ -601,7 +601,7 @@ class Hive:
     piece.coordinates = coordinates
   
 
-  def checkForWinner(self):
+  def checkIfSurrounded(self):
     surrounded = []
 
     for key, pieces in self.board.iteritems():
@@ -609,7 +609,7 @@ class Hive:
         if piece.kind == 'Q':
           isSurrounded = True
           for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
-            if self.getTopPieceAtCoordinates(coordinates):
+            if not self.getTopPieceAtCoordinates(coordinates):
               isSurrounded = False
               break
           if isSurrounded:
@@ -751,9 +751,9 @@ class Game:
     self.switchCurrentPlayer()
     self.moveList.append(moveString)
 
-    winner = self.hive.checkForWinner()
-    if len(winner) > 0:
-      logging.debug('Game.makeMove winner = ' + str(winner))
+    surrounded = self.hive.checkIfSurrounded()
+    if len(surrounded) > 0:
+      logging.debug('Game.makeMove surrounded = ' + str(surrounded))
     
   def isValidMove(self, proposedCoordinates, possibleCoordinatesList):
     logging.debug('Game.isValidMove: proposedCoordinates=' + str(proposedCoordinates))
@@ -804,10 +804,19 @@ class Game:
       except MoveError as e:
         print e.value
       else:
-        self.hive.printBoard()
+        self.printBoard()
 
       print
 
+
+  def readMoveList(self, moveListCSV):
+    moveList = moveListCSV.split(', ')
+    for move in moveList:
+      move = re.sub('^[0-9]+. ', '', move)
+      self.makeMove(move)
+   
+  def printBoard(self):
+   self.hive.printBoard()
 
 
 class InputError(Exception):
@@ -830,16 +839,18 @@ class HiveCmd(Cmd):
   prompt = 'hive> '
   intro = 'Hive Bot Framework\n------------------'
 
-  def do_greet(self, person):
-    if person:
-      print "Hello, " + person
-    else:
-      print "Hello"
-
   def do_new(self, line):
     "Start new game"
     self.game = Game()
     self.game.run()
+
+
+  def do_resume(self, moveList):
+    self.game = Game()
+    self.game.readMoveList(moveList)
+    self.game.printBoard()
+    self.game.run()
+
 
   def do_exit(self, line):
     return True
