@@ -5,6 +5,7 @@ This is framework for running a game of Hive between two bots.
 ## Developers
 
 Requires:
+
  * Python 2.7
  * cmd2 egg
 
@@ -15,6 +16,7 @@ shell> python framework.py
 ## Authors
 
 Tyler Price
+
 * [[http://twitter.com/thoughtcrimes]]
 * [[hub.comhttps://github.com/tylerxprice]]
 
