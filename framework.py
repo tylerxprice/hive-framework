@@ -1,6 +1,8 @@
 import sys
 import re
 import logging
+from cmd2 import Cmd
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -597,7 +599,23 @@ class Hive:
       self.board[key] = [piece]
 
     piece.coordinates = coordinates
+  
 
+  def checkForWinner(self):
+    surrounded = []
+
+    for key, pieces in self.board.iteritems():
+      for piece in pieces:
+        if piece.kind == 'Q':
+          isSurrounded = True
+          for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
+            if self.getTopPieceAtCoordinates(coordinates):
+              isSurrounded = False
+              break
+          if isSurrounded:
+            surrounded.append(piece.color)
+
+    return surrounded
 
 
   """
@@ -728,10 +746,14 @@ class Game:
     if not piece.coordinates == (None, None, None):
       self.hive.pickupPiece(piece)
     self.hive.putdownPiece(piece, proposedCoordinates)
-  
+
     self.turnNumber += 1
     self.switchCurrentPlayer()
     self.moveList.append(moveString)
+
+    winner = self.hive.checkForWinner()
+    if len(winner) > 0:
+      logging.debug('Game.makeMove winner = ' + str(winner))
     
   def isValidMove(self, proposedCoordinates, possibleCoordinatesList):
     logging.debug('Game.isValidMove: proposedCoordinates=' + str(proposedCoordinates))
@@ -759,7 +781,6 @@ class Game:
       return ((matches.group('color'), matches.group('kind'), matches.group('number')), position)
     return None
 
-
   def switchCurrentPlayer(self):
     if self.currentPlayer == self.whitePlayer:
       self.currentPlayer = self.blackPlayer
@@ -769,8 +790,24 @@ class Game:
   def getMoveListCsv(self):
     return ','.join(map(str, self.moveList))
 
-  def printBoard(self):
-    self.hive.printBoard()
+  def run(self):
+    enteredMove = None
+    while True:
+      enteredMove = raw_input(self.currentPlayer.color.capitalize() + "'s turn: ")
+      if enteredMove == 'end':
+        break
+
+      try:
+        self.makeMove(enteredMove)
+      except InputError as e:
+        print e.value
+      except MoveError as e:
+        print e.value
+      else:
+        self.hive.printBoard()
+
+      print
+
 
 
 class InputError(Exception):
@@ -786,32 +823,40 @@ class MoveError(Exception):
       return repr(self.value)
 
 
-def main():
-    game = Game()
 
-    print ('Hive AI Framework')
-    print ('-------------------')
-    print 
+class HiveCmd(Cmd):
+  """ Hive Bot Framework """
+  game = None
+  prompt = 'hive> '
+  intro = 'Hive Bot Framework\n------------------'
 
-    enteredMove = None
-    while True:
-      enteredMove = raw_input(game.currentPlayer.color.capitalize() + '\'s turn, enter a move: ')
-      if enteredMove == 'exit':
-        break
+  def do_greet(self, person):
+    if person:
+      print "Hello, " + person
+    else:
+      print "Hello"
 
-      try:
-        game.makeMove(enteredMove)
-      except InputError as e:
-        print e.value
-      except MoveError as e:
-        print e.value
-      else:
-        game.printBoard()
+  def do_new(self, line):
+    "Start new game"
+    self.game = Game()
+    self.game.run()
 
-      print
+  def do_exit(self, line):
+    return True
+
+  def do_EOF(self, line):
+    return True
+
+  def do_shell(self, line):
+    "Run a shell command"
+    output = os.popen(line).read()
+    print output
+    self.last_output = output
+
+  def postloop(self):
+    print
 
 
-    sys.exit(0)
-
-if __name__ == "__main__": main() 
+if __name__ == "__main__": 
+  HiveCmd().cmdloop() 
 
