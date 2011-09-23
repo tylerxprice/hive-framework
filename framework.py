@@ -3,6 +3,7 @@ import re
 import logging
 from cmd2 import Cmd
 import os
+import subprocess
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -790,33 +791,15 @@ class Game:
   def getMoveListCsv(self):
     return ','.join(map(str, self.moveList))
 
-  def run(self):
-    enteredMove = None
-    while True:
-      enteredMove = raw_input(self.currentPlayer.color.capitalize() + "'s turn: ")
-      if enteredMove == 'end':
-        break
-
-      try:
-        self.makeMove(enteredMove)
-      except InputError as e:
-        print e.value
-      except MoveError as e:
-        print e.value
-      else:
-        self.printBoard()
-
-      print
-
-
   def readMoveList(self, moveListCSV):
     moveList = moveListCSV.split(', ')
     for move in moveList:
-      move = re.sub('^[0-9]+. ', '', move)
-      self.makeMove(move)
+      if not move == '':
+        move = re.sub('^[0-9]+. ', '', move)
+        self.makeMove(move)
    
   def printBoard(self):
-   self.hive.printBoard()
+    self.hive.printBoard()
 
 
 class InputError(Exception):
@@ -832,41 +815,85 @@ class MoveError(Exception):
       return repr(self.value)
 
 
+class Framework():
+  def __init__(self):
+    self.whiteBot = None
+    self.blackBot = None
+
+  def newGame(self):
+    print "Starting new game..."
+    self.whiteBot = self.readBot('white')
+    self.blackBot = self.readBot('black')
+    self.game = Game()
+    self.run()
+
+  def resumeGame(self, moveList):
+    print "Resumeing game..."
+    self.whiteBot = self.readBot('white')
+    self.blackBot = self.readBot('black')
+    self.game = Game()
+    self.game.readMoveList(moveList)
+    self.run()
+
+  def readBot(self, player):
+    while True:
+      bot = raw_input(player.capitalize() + " player bot (blank for human):")
+      if not bot:
+        return None
+      elif os.path.exists(bot):
+        return bot
+      else:
+        print "Couldn't locate the bot. Try again."
+    return None
+
+  def run(self):
+    while True:
+      moveString = self.readMove(self.game.currentPlayer.color)
+      if moveString == 'quit' or moveString == 'exit':
+        break
+      try:
+        print self.game.currentPlayer.color.capitalize() + ' plays ' + moveString
+        self.game.makeMove(moveString)
+      except InputError as e:
+        print e.value
+        break
+      except MoveError as e:
+        print e.value
+        break;
+      else:
+        self.game.printBoard()
+
+  def readMove(self, color): 
+    if color == 'white': 
+      bot = self.whiteBot
+    else:
+      bot = self.blackBot
+
+    moveString = 'error'
+    if bot:
+      try:
+        bot = subprocess.Popen([self.whiteBot, self.game.getMoveListCsv()], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
+        moveString = bot.communicate()[0]
+      except OSError as details:
+        print self.whiteBot + 'failed to execute: ' + str(details)
+    else:
+      moveString = raw_input(self.game.currentPlayer.color.capitalize() + "'s turn: ")
+
+    return moveString
+
 
 class HiveCmd(Cmd):
   """ Hive Bot Framework """
-  game = None
   prompt = 'hive> '
   intro = 'Hive Bot Framework\n------------------'
 
-  def do_new(self, line):
+  def do_ngame(self, line):
     "Start new game"
-    self.game = Game()
-    self.game.run()
+    Framework().newGame()
 
-
-  def do_resume(self, moveList):
-    self.game = Game()
-    self.game.readMoveList(moveList)
-    self.game.printBoard()
-    self.game.run()
-
-
-  def do_exit(self, line):
-    return True
-
-  def do_EOF(self, line):
-    return True
-
-  def do_shell(self, line):
-    "Run a shell command"
-    output = os.popen(line).read()
-    print output
-    self.last_output = output
-
-  def postloop(self):
-    print
-
+  def do_rgame(self, moveList):
+    "Resume game from move list"
+    Framework().resumeGame(moveList)
 
 if __name__ == "__main__": 
   HiveCmd().cmdloop() 
