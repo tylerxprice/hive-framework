@@ -10,6 +10,7 @@ Requires:
  * cmd2 egg
 
 To run the framework:
+
 shell> python framework.py
 
 
@@ -17,8 +18,8 @@ shell> python framework.py
 
 Tyler Price
 
-* [[http://twitter.com/thoughtcrimes]]
-* [[hub.comhttps://github.com/tylerxprice]]
+* http://twitter.com/thoughtcrimes
+* https://github.com/tylerxprice
 
 
 ## MIT License
