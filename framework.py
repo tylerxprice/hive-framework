@@ -10,10 +10,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 class Piece:
   def __init__(self, color, kind, number):
-    self.color = color
-    self.kind = kind
-    self.number = number
-    self.coordinates = (None, None, None) #x,y,z
+    self.color = color # w, b
+    self.kind = kind # A, B, G, Q, S
+    self.number = number # '', 1, 2, 3
+    self.coordinates = (None, None, None) # (x,y,z)
 
   def getNotation(self):
     return self.color + self.kind + str(self.number)#+ ' @ ' + str(self.coordinates)
@@ -56,7 +56,7 @@ class QueenBeePiece(Piece):
     # get adjacencies
     adjacentCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
 
-    # partition into occupied and free (exclude) gates
+    # partition into occupied and free (exclude gates)
     occupiedAdjacentCoordinatesList = []
     freeAdjacentCoordinatesList = []
     for adjacentCoordinates in adjacentCoordinatesList:
@@ -158,7 +158,7 @@ class BeetlePiece(Piece):
       return []
 
     possibleCoordinatesList = []
-    if self.coordinates[2] > 0: # beetle on top: can move to any adjcent hex
+    if self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle on top: can move to any adjacent hex
       possibleCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
       # get adjacencies
@@ -180,6 +180,7 @@ class BeetlePiece(Piece):
             possibleCoordinatesList.append(freeAdjacentCoordinates)
             break
 
+      # can also move on to occupied adjacent hexes
       possibleCoordinatesList.extend(occupiedAdjacentCoordinatesList)
 
     return possibleCoordinatesList
@@ -384,10 +385,10 @@ class Player:
     Also connects to pieces at (x,y,z-1) COVERING and (x,y,z+1) COVERED
    
 
-  Since the board expands ad infinitum, we will use a dictionary with keys "x,y". Where each entry is a list of pieces at the square.
+  Since the board expands ad infinitum, we will use a dictionary with keys "x,y". Where each entry is a list of pieces at the hex.
   e.g.:
     board["0,0"] = [wQ]
-    board["-1,0"] = [bQ, wB1]   -- the white beetle is ontop of of the black queen bee, each piece will know their z value to find the max
+    board["-1,0"] = [bQ, wB1]   -- the white beetle is on top of of the black queen bee
     board["-1,-1] = [bG1]
 
 """
@@ -434,7 +435,6 @@ class Hive:
   
     visitedPieces = dict()
 
-
     self.pickupPiece(piece)
 
     logging.debug('Hive.isBrokenWithoutPiece: start state, board = ' + str(self.board))
@@ -444,6 +444,7 @@ class Hive:
     rootPiece = self.board[key][len(self.board[key]) - 1]
     for p in self.board[key]: visitedPieces[p.getNotation()] = 1
 
+    # try to visit all pieces in the hive
     self.visitPiece(rootPiece, visitedPieces)
 
     self.putdownPiece(piece, piece.coordinates)
@@ -486,14 +487,12 @@ class Hive:
     coordinatesList = []
     uniqueCoordinates = dict()
 
-    
     for key, pieces in self.board.iteritems():
       piece = pieces[len(pieces) - 1] 
 
       adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
       logging.debug('Hive.getEntryCoordinatesList(' + color + '): piece=' + str(piece))
       logging.debug('Hive.getEntryCoordinatesList(' + color + '): adjacentCoordinatesList=' + str(adjacentCoordinatesList))
-
 
       for coordinates in adjacentCoordinatesList: #self.getAdjacentCoordinatesList(piece.coordinates)
         coordinatesKey = self.getBoardKey(coordinates)
@@ -622,13 +621,14 @@ class Hive:
   """
     Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
 
-     0123456789012345
-    0   / \ / \ / \                   
+     sx        111111
+     0123456789012345   y
+ sy 0   / \ / \ / \                    
     1  | . | . | . |  0
     2 / \ / \ / \ /  
     3| . | * | .  1
     4 \ / \ /    
-     0   1   2 
+     0   1   2  x
 
     Char array indices are on the left and top axes, hex indices on the bottom and right axies
     hex   -> char
@@ -641,10 +641,10 @@ class Hive:
 
     sx = 4*x - 2*y + 2*h
     sy = 2*y + 1
+    h = max(y)
 
   """
   def printBoard(self):
-    #debug print out all keys and pairs
     logging.debug('Hive.printBoard: board=' + str(self.board))
 
 
@@ -723,7 +723,7 @@ class Game:
     # QueenBee validation
     if self.turnNumber == 5 or self.turnNumber == 6:
       if not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
-        raise MoveError("You must play your QueenBee in your first 4 turns.")
+        raise MoveError("You must play your Queen Bee in your first 4 turns.")
       
     # get list of possible move coordinates
     possibleCoordinatesList = piece.getPossibleCoordinatesList(self.hive)
