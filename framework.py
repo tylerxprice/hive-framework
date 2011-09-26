@@ -620,7 +620,6 @@ class Hive:
 
   """
     Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
-
      sx        111111
      0123456789012345   y
  sy 0   / \ / \ / \                    
@@ -677,7 +676,10 @@ class Hive:
         key = self.getBoardKey((x, y))
         if self.board.has_key(key):
           piece = self.board[key][len(self.board[key]) - 1]
-          s[sy][sx] = piece.getPbemNotation()
+          # s[sy][sx] = piece.getPbemNotation()
+          s[sy][sx-1] = piece.color
+          s[sy][sx] = piece.kind
+          s[sy][sx+1] = str(piece.number) if piece.number else ' '
           s[sy-1][sx-1] = '/'
           s[sy][sx-2] = '|'
           s[sy+1][sx-1] = '\\'
