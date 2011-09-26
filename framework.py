@@ -326,22 +326,13 @@ class Player:
     self.pieces['G2'] = GrasshopperPiece(color, 2)
     self.pieces['G3'] = GrasshopperPiece(color, 3)
 
-  def pickupPiece(self, (color, kind, number)):
+  def getPiece(self, (color, kind, number)):
     key = kind + str(number)
-    piece = None
-    if self.pieces.has_key(key):
-      piece = self.pieces[key]
-      del self.pieces[key]
-      logging.debug("Pile.pickupPiece: " + str(piece))
-    return piece
-
-  def putdownPiece(self, piece):
-    key = piece.kind + str(piece.number)
-    self.pieces[key] = piece
+    return self.pieces[key]
 
   def hasPlayed(self, kind, number = ''):
     key = kind + str(number)
-    return not self.pieces.has_key(key)
+    return not self.pieces[key].coordinates == (None, None, None)
 
 
 """                                   
@@ -546,34 +537,34 @@ class Hive:
 
   
   def getRelativeCoordinates(self, piece, relativePiece, relativePosition):
-    logging.debug('Hive.putdownPiece: piece=' + str(piece))
+    logging.debug('Hive.getRelativeCoordinates: piece=' + str(piece))
 
     newCoordinates = (0,0,0)
     if relativePiece:
-      logging.debug('Hive.putdownPiece: relativePiece=' + str(relativePiece))
-      logging.debug('Hive.putdownPiece: relativePosition=' + relativePosition)
+      logging.debug('Hive.getRelativeCoordinates: relativePiece=' + str(relativePiece))
+      logging.debug('Hive.getRelativeCoordinates: relativePosition=' + relativePosition)
 
       relativeCoordinates = relativePiece.coordinates
       if relativePosition == Hive.TOPRIGHT:
-        logging.debug('Hive.putdownPiece: TOPRIGHT')
+        logging.debug('Hive.getRelativeCoordinates: TOPRIGHT')
         newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] - 1, 0)
       elif relativePosition == Hive.RIGHT:
-        logging.debug('Hive.putdownPiece: RIGHT')
+        logging.debug('Hive.getRelativeCoordinates: RIGHT')
         newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1], 0)
       elif relativePosition == Hive.BOTTOMRIGHT:
-        logging.debug('Hive.putdownPiece: BOTTOMRIGHT')
+        logging.debug('Hive.getRelativeCoordinates: BOTTOMRIGHT')
         newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1] + 1, 0)
       elif relativePosition == Hive.BOTTOMLEFT:
-        logging.debug('Hive.putdownPiece: BOTTOMLEFT')
+        logging.debug('Hive.getRelativeCoordinates: BOTTOMLEFT')
         newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] + 1, 0)
       elif relativePosition == Hive.LEFT:
-        logging.debug('Hive.putdownPiece: LEFT')
+        logging.debug('Hive.getRelativeCoordinates: LEFT')
         newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1], 0)
       elif relativePosition == Hive.TOPLEFT:
-        logging.debug('Hive.putdownPiece: TOPLEFT')
+        logging.debug('Hive.getRelativeCoordinates: TOPLEFT')
         newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1] - 1, 0)
       elif relativePosition == Hive.COVER:
-        logging.debug('Hive.putdownPiece: COVER')
+        logging.debug('Hive.getRelativeCoordinates: COVER')
         newCoordinates = (relativeCoordinates[0], relativeCoordinates[1], relativeCoordinates[2] + 1)
     return newCoordinates
 
@@ -718,14 +709,18 @@ class Game:
 
     # check if the piece hasn't been played yet, otherwise take if from the board
     pieceAttributes = self.parsePieceAttributes(moveString)
-    piece = self.currentPlayer.pickupPiece(pieceAttributes) 
+    piece = self.currentPlayer.getPiece(pieceAttributes)
     if not piece:
-      piece = self.hive.getPiece(pieceAttributes)
+      raise InputError ("The piece you entered is not valid.")
 
-    # QueenBee validation
-    if self.turnNumber == 5 or self.turnNumber == 6:
-      if not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
-        raise MoveError("You must play your Queen Bee in your first 4 turns.")
+    # may not move a piece until queen is moved
+    if self.currentPlayer.hasPlayed(piece.kind, piece.number) and not self.currentPlayer.hasPlayed('Q'):
+      raise MoveError("You must play your Queen Bee before you may move other insects.")
+
+    # queen must be played in a player's first 4 moves
+    if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
+      raise MoveError("You must play your Queen Bee in your first 4 turns.")
+
       
     # get list of possible move coordinates
     possibleCoordinatesList = piece.getPossibleCoordinatesList(self.hive)
@@ -741,9 +736,7 @@ class Game:
 
     # check if valid move
     if not self.isValidMove(proposedCoordinates, possibleCoordinatesList):
-      if piece.coordinates == (None, None, None):
-        self.currentPlayer.putdownPiece(piece)
-      raise MoveError ("The move you entered is invalid.")
+      raise MoveError ("The move you entered is not valid.")
 
     # make the move
     if not piece.coordinates == (None, None, None):
@@ -771,7 +764,7 @@ class Game:
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
     match = re.match('^[bw][ABGQS][0-3]?(?:\\s[\\\/-]?[bw][ABGQS][0-3]?[\\\/-]?)?$', moveString)
     if not match:
-      raise InputError("I don't understand that move.")
+      raise InputError("The move you entered is not valid.")
 
   def parsePieceAttributes(self, moveString):
     matches = re.search('^(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-3]?)', moveString)
@@ -858,10 +851,8 @@ class Framework():
         self.game.makeMove(moveString)
       except InputError as e:
         print e.value
-        break
       except MoveError as e:
         print e.value
-        break;
       else:
         self.game.printBoard()
 
