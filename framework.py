@@ -1,11 +1,13 @@
-import sys
-import os
-import re
-import random
-from collections import deque
 import logging
-from cmd2 import Cmd
+import os
+import random
+import re
+import argparse
+import shlex
 import subprocess
+import sys
+import time
+from cmd2 import Cmd
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -255,10 +257,11 @@ class GrasshopperPiece(Piece):
 
 
 class Player:
-  def __init__(self, color):
+  def __init__(self, color, bot):
+    self.bot = bot
+    self.color = color
     self.pieces = dict()
     self.setupStartingPieces(color[0])
-    self.color = color
     self.seenHiveStates = []
 
 
@@ -707,13 +710,16 @@ class Hive:
 
 
 class Game:
-  def __init__(self):
-    self.whitePlayer = Player('white')
-    self.blackPlayer = Player('black')
+  def __init__(self, whiteBot, blackBot, timeControls, moveList):
+    self.whitePlayer = Player('white', whiteBot)
+    self.blackPlayer = Player('black', blackBot)
     self.currentPlayer = self.whitePlayer
-    self.hive = Hive()
-    self.moveList = []
     self.turnNumber = 1
+    self.gameTime = 300000 #ms
+    self._readTimeControls(timeControls)
+    self.moveList = []
+    self._readMoveList(moveList)
+    self.hive = Hive()
     self.winner = None
 
   def makeMove(self, moveString):
@@ -765,9 +771,10 @@ class Game:
       self.hive.pickupPiece(piece)
     self.hive.putdownPiece(piece, proposedCoordinates)
 
+    self.moveList.append(str(self.turnNumber) + '. ' + moveString)
     self.turnNumber += 1
     self.switchCurrentPlayer()
-    self.moveList.append(moveString)
+
 
   def isGameOver(self):
     # check for wins/stalemate (via surrounding)
@@ -775,16 +782,16 @@ class Game:
     logging.debug('Game.isGameOver surrounded = ' + str(surrounded))
     if len(surrounded) > 0:
       if len(surrounded) == 2:
-        self.winner = 'Draw'
+        self.winner = 'draw'
       elif surrounded[0] == 'w':
-        self.winner = 'Black'
+        self.winner = 'black'
       else:
-        self.winner = 'White'
+        self.winner = 'white'
       return True
     
     # check for stalemate (via threefold repetition)
     if self.currentPlayer.hasSeenThreefoldRepetition():
-      self.winner = 'Draw'
+      self.winner = 'draw'
       return True
 
     return False
@@ -829,16 +836,25 @@ class Game:
     self.currentPlayer.addHiveState(self.hive.zobrist.currentState)
 
 
-  def getMoveListCsv(self):
-    return ','.join(map(str, self.moveList))
-
-
-  def readMoveList(self, moveListCSV):
-    moveList = moveListCSV.split(', ')
+  def _readMoveList(self, moveListCsv):
+    moveList = moveListCsv.split(', ')
     for move in moveList:
       if not move == '':
         move = re.sub('^[0-9]+. ', '', move)
         self.makeMove(move)
+
+  def getMoveListCsv(self):
+    return ','.join(map(str, self.moveList))
+
+
+  def _readTimeControls(self, timeControlsCsv):
+    timeControls = timeControlsCsv.split(',')
+    self.gameTime = timeControls[0]
+    self.whitePlayer.timeUsed = timeControls[1]
+    self.blackPlayer.timeUsed = timeControls[2]
+
+  def getTimeControlsCsv(self):
+    return str(self.gameTime) + ',' + str(self.whitePlayer.timeUsed) + ',' + str(self.blackPlayer.timeUsed)
    
 
   def printBoard(self):
@@ -863,43 +879,27 @@ class MoveError(Exception):
 
 
 class Framework():
-  def __init__(self):
-    self.whiteBot = None
-    self.blackBot = None
+  def __init__(self, args):
+    self.args = self._parseArgs(args)
 
-
-  def newGame(self):
-    print "Starting new game..."
-    self.whiteBot = self.readBot('white')
-    self.blackBot = self.readBot('black')
-    self.game = Game()
-    self.run()
-
-
-  def resumeGame(self, moveList):
-    print "Resumeing game..."
-    self.whiteBot = self.readBot('white')
-    self.blackBot = self.readBot('black')
-    self.game = Game()
-    self.game.readMoveList(moveList)
-    self.run()
-
-
-  def readBot(self, player):
-    while True:
-      bot = raw_input(player.capitalize() + " player bot (blank for human):")
-      if not bot:
-        return None
-      elif os.path.exists(bot):
-        return bot
-      else:
-        print "Couldn't locate the bot. Try again."
-    return None
-
+  def _parseArgs(self, args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--white')
+    parser.add_argument('--black')
+    parser.add_argument('--times', default='30000,0,0')
+    parser.add_argument('--moves', default='')
+    args = parser.parse_args(args.split())
+    args = vars(args)
+    logging.debug('Framework._parseArgs: args = ' + str(args))
+    return args
 
   def run(self):
+    self.args['white'] = self.readBot('white', self.args['white'])
+    self.args['black'] = self.readBot('black', self.args['black'])
+    self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'])
+
     while not self.game.isGameOver():
-      moveString = self.readMove(self.game.currentPlayer.color)
+      moveString = self.readMove()
       if moveString == 'quit' or moveString == 'exit':
         break
       try:
@@ -907,25 +907,47 @@ class Framework():
         self.game.makeMove(moveString)
       except InputError as e:
         print e.value
+        if self.game.currentPlayer.bot: break;
       except MoveError as e:
         print e.value
+        if self.game.currentPlayer.bot: break;
       else:
         self.game.printBoard()
 
 
-  def readMove(self, color): 
-    if color == 'white': 
-      bot = self.whiteBot
-    else:
-      bot = self.blackBot
+  def readBot(self, color, bot=''):
+    while True:
+      if not bot:
+        bot = raw_input(color.capitalize() + " player bot (blank for human): ")
+      else:
+        print color.capitalize() + " player bot (blank for human): " + bot
 
+      if bot == '':
+        return None
+      elif os.path.exists(bot):
+        return bot
+      else:
+        print "Couldn't locate the bot. Try again."
+        bot = None
+    return None
+
+
+  def readMove(self): 
     moveString = 'error'
-    if bot:
+    if self.game.currentPlayer.bot:
       try:
-        bot = subprocess.Popen([self.whiteBot, self.game.getMoveListCsv()], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
-        moveString = bot.communicate()[0]
+        commandLine = self.game.currentPlayer.bot + '--times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMovesListCsv() + '"'
+        args = shlex.split(commandLine)
+        startTime = time()
+        botProcess = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
+        moveString = botProcess.communicate()[0]
+        endTime = time()
+        totalTime = endTime - startTime()
+        self.game.currentPlayer.timeUsed += totalTime
+        logging.debug('Framework.readMove bottime = ' + str (totalTime))
       except OSError as details:
-        print self.whiteBot + 'failed to execute: ' + str(details)
+        logging.debug('Framework.readMOve OSError = ' + str(details))
+        raise InputError(player.bot + ' process failed to execute')
     else:
       moveString = raw_input(self.game.currentPlayer.color.capitalize() + "'s turn: ")
 
@@ -938,15 +960,8 @@ class HiveCmd(Cmd):
   prompt = 'hive> '
   intro = 'Hive Bot Framework\n------------------'
 
-  def do_ngame(self, line):
-    "Start new game"
-    Framework().newGame()
-
-
-  def do_rgame(self, moveList):
-    "Resume game from move list"
-    Framework().resumeGame(moveList)
-
+  def do_game(self, args = ''):
+    Framework(args).run()
 
 
 if __name__ == "__main__": 
