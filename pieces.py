@@ -1,3 +1,5 @@
+import logging
+
 class Piece:
   def __init__(self, color, kind, number):
     self.color = color # w, b
@@ -11,7 +13,17 @@ class Piece:
 
 
   def getPossibleCoordinatesList(self, hive):
-    return []
+    if self.coordinates == (None,None,None): # not on board yet
+      logging.debug('Piece.getPossibleCoordinatesList: piece not on board')
+      return hive.getEntryCoordinatesList(self.color)
+    elif not self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle pinned
+      logging.debug('Piece.getPossibleCoordinatesList: piece beetle pinned')
+      return []
+    elif hive.isBrokenWithoutPiece(self): # if picking up breaks hive: 0 possible coordinates
+      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+      return []
+
+    return None
 
 
   def __repr__(self):
@@ -28,6 +40,10 @@ class QueenBeePiece(Piece):
 
 
   def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
     # can move 1 empty hex away, but cannot enter gates
     possibleCoordinatesList = []
     
@@ -63,6 +79,10 @@ class SpiderPiece(Piece):
 
 
   def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
     # can move 3 emtpy hex away, but cannot enter gates and cannot backtrack
     possibleCoordinatesList = []
 
@@ -111,6 +131,10 @@ class BeetlePiece(Piece):
 
 
   def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
     possibleCoordinatesList = []
 
     if self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle on top: can move to any adjacent hex
@@ -149,6 +173,10 @@ class AntPiece(Piece):
     Piece.__init__(self, color, 'A', number)
 
   def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
     # can move to any non-gate hex around hive
     hive.pickupPiece(self)
     possibleCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
@@ -167,6 +195,10 @@ class GrasshopperPiece(Piece):
 
 
   def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
     # can move in straight lines from current hex, but must stop at first space 
     # in each direction, starting one occupied space over, find first borderCoordinates
     possibleCoordinatesList = []

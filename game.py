@@ -49,18 +49,7 @@ class Game:
     proposedCoordinates = self.hive.getRelativeCoordinates(piece, relativePiece, relativePosition)
 
     # check if valid move
-    if piece.coordinates == (None,None,None): # not on board yet
-      logging.debug('Game.makeMove: piece not on board')
-      possibleCoordinatesList = self.hive.getEntryCoordinatesList(piece.color)
-    elif not piece == self.hive.getTopPieceAtCoordinates(piece.coordinates): # beetle pinned
-      logging.debug('Game.makeMove: piece beetle pinned')
-      possibleCoordinatesList = []
-    elif self.hive.isBrokenWithoutPiece(piece): # if picking up breaks hive: 0 possible coordinates
-      logging.debug('Game.makeMove: breaks hive')
-      possibleCoordinatesList = []
-    else:
-      possibleCoordinatesList = piece.getPossibleCoordinatesList(self.hive)
-
+    possibleCoordinatesList = piece.getPossibleCoordinatesList(self.hive)
     if not self.isValidMove(proposedCoordinates, possibleCoordinatesList):
       raise MoveError ("The move you entered is not valid.")
 
