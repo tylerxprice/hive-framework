@@ -24,7 +24,7 @@ class Game:
     self.validateMoveString(moveString)
 
     # check if the piece hasn't been played yet, otherwise take if from the board
-    pieceAttributes = self.parsePieceAttributes(moveString)
+    pieceAttributes = self.parsePieceAttributes(moveString, self.currentPlayer.color)
     piece = self.currentPlayer.getPiece(pieceAttributes)
     if not piece:
       raise InputError ("The piece you entered is not valid.")
@@ -107,14 +107,17 @@ class Game:
 
   def validateMoveString(self, moveString):
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
-    match = re.match('^[bw][ABGQS][0-3]?(?:\\s[\\\/-]?[bw][ABGQS][0-3]?[\\\/-]?)?$', moveString)
+    match = re.match('^[bw]?[ABGQS][0-3]?(?:\\s[\\\/-]?[bw][ABGQS][0-3]?[\\\/-]?)?$', moveString)
     if not match:
       raise InputError("The move you entered is not valid.")
 
 
-  def parsePieceAttributes(self, moveString):
-    matches = re.search('^(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-3]?)', moveString)
-    return (matches.group('color'), matches.group('kind'), matches.group('number'))
+  def parsePieceAttributes(self, moveString, currentColor):
+    matches = re.search('^(?P<color>b|w)?(?P<kind>[ABGQS])(?P<number>[0-3]?)', moveString)
+    color = matches.group('color')
+    if not color:
+      color = currentColor
+    return (color, matches.group('kind'), matches.group('number'))
 
 
   def parseRelativeAttributes(self, moveString):
