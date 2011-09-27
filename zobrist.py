@@ -2,21 +2,25 @@ import random
 
 class Zobrist:
   """ This is a modification of Zobrist keys: they are lazily generated into a dictionary since the number of different hexes a piece can land throughout the game on is indeterminate. """
+  (COLORSTRING, KINDSTRING) = ('wb', 'ABGQS')
+
   def __init__(self):
-    self.zobristKeys = dict()
+    self.zobristKeys = [[dict() for y in range(5)] for x in range(2)]
     self.sideKey = self._generateRandomNumber()
     self.currentState = 0L
 
 
-  def _getDictKey(self, color, kind, number = '', coordinates = (None, None, None)):
-    return color + kind + str(number) + '@' + str(coordinates[0]) + ',' +  str(coordinates[1]) + ',' + str(coordinates[2])
+  def _getDictKey(self, coordinates = (None, None, None)):
+    return str(coordinates[0]) + ',' +  str(coordinates[1]) + ',' + str(coordinates[2])
 
 
-  def _getZobristKey(self, color, kind, number = '', coordinates = (None, None, None)):
-    dictKey = self._getDictKey(color, kind, number, coordinates)
-    if not self.zobristKeys.has_key(dictKey):
-      self.zobristKeys[dictKey] = self._generateRandomNumber()
-    return self.zobristKeys[dictKey]
+  def _getZobristKey(self, color, kind, coordinates = (None, None, None)):
+    colorIndex = Zobrist.COLORSTRING.index(color)
+    kindIndex = Zobrist.KINDSTRING.index(kind)
+    dictKey = self._getDictKey(coordinates)
+    if not self.zobristKeys[colorIndex][kindIndex].has_key(dictKey):
+      self.zobristKeys[colorIndex][kindIndex][dictKey] = self._generateRandomNumber()
+    return self.zobristKeys[colorIndex][kindIndex][dictKey]
 
 
   def _generateRandomNumber(self): # is this sufficient?
@@ -29,7 +33,7 @@ class Zobrist:
 
 
   def updateState(self, piece):
-    key = self._getZobristKey(piece.color, piece.kind, piece.number, piece.coordinates)
+    key = self._getZobristKey(piece.color, piece.kind, piece.coordinates)
     self.currentState = self.currentState ^ key
     #logging.debug('Zobrist.updateState: state = ' + str(self.currentState))
 
