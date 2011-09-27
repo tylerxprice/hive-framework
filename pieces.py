@@ -1,11 +1,21 @@
 import logging
 
 class Piece:
+  (COLORSTRING, KINDSTRING) = ('wb', 'ABGQS')
+
   def __init__(self, color, kind, number):
     self.color = color # w, b
     self.kind = kind # A, B, G, Q, S
     self.number = number # '', 1, 2, 3
     self.coordinates = (None, None, None) # (x,y,z)
+
+
+  def getColorIndex(self):
+    return Piece.COLORSTRING.index(self.color)
+
+
+  def getKindIndex(self):
+    return Piece.KINDSTRING.index(self.kind)
 
 
   def getNotation(self):
