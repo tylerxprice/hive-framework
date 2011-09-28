@@ -37,6 +37,10 @@ class Player:
     self.seenHiveStates.append(state)
 
 
+  def removeHiveState(self, state):
+    self.seenHiveStates.pop(state)
+
+
   def hasSeenThreefoldRepetition(self):
     if len(self.seenHiveStates) < 5:
       return False

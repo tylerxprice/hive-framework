@@ -13,14 +13,16 @@ class Game:
     self.blackPlayer = Player('black', blackBot)
     self.currentPlayer = self.whitePlayer
     self.turnNumber = 1
+    self.hive = Hive()
+
     self.gameTime = 300000 #ms
     self._readTimeControls(timeControls)
     self.moveList = []
     self._readMoveList(moveList)
-    self.hive = Hive()
     self.winner = None
 
-  def makeMove(self, moveString):
+
+  def playMove(self, moveString):
     self.validateMoveString(moveString)
 
     # check if the piece hasn't been played yet, otherwise take if from the board
@@ -61,11 +63,11 @@ class Game:
     self.moveList.append(str(self.turnNumber) + '. ' + moveString)
     self.turnNumber += 1
     self.switchCurrentPlayer()
+    self.currentPlayer.addHiveState(self.hive.getState())
 
 
   def isGameOver(self):
-    # check for wins/stalemate (via surrounding)
-    surrounded = self.hive.getSurroundedQueenColors()
+    surrounded = self.hive.getSurroundedQueenColors() # check for wins/stalemate (via surrounding)
     logging.debug('Game.isGameOver surrounded = ' + str(surrounded))
     if len(surrounded) > 0:
       if len(surrounded) == 2:
@@ -93,6 +95,47 @@ class Game:
         return True
     return False
 
+
+  def getValidMoves(self):
+    # queen must be played in a player's first 4 moves
+    if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q'):
+      return self.currentPlayer.pieces['Q'].getPossibleCoordinatesList(self.hive)
+
+    moveList = []
+
+    # may not move a piece until queen is moved
+    canMoveHivePieces = True
+    if not self.currentPlayer.hasPlayed('Q'):
+      canMoveHivePieces = False
+
+    for key, piece in self.currentPlayer.pieces.iteritems():
+      if canMoveHivePieces or piece.coordinates == (None, None, None):
+        for coordinates in piece.getPossibleCoordinatesList(self.hive):
+          moveList.append(Move(piece, piece.coordinates, coordinates))
+
+    return moveList
+
+  def makeMove(self, move):
+    if not move.startCoordinates == (None, None, None):
+      self.hive.pickupPiece(move.piece)
+    self.hive.putdownPiece(move.piece, move.endCoordinates)
+
+    #self.moveList.append(str(self.turnNumber) + '. ' + move.getMoveString(self.hive))
+    self.turnNumber += 1
+    self.switchCurrentPlayer()
+    self.currentPlayer.addHiveState(self.hive.getState())
+
+
+  def unmakeMove(self, move):
+    if not move.piece.coordinates == (None, None, None):
+      self.hive.pickupPiece(move.piece)
+    self.hive.putdownPiece(move.piece, move.endCoordinates)
+
+    #self.moveList.pop()
+    self.turnNumber += 1
+    self.switchCurrentPlayer()
+    self.currentPlayer.removeHiveState()
+    
 
   def validateMoveString(self, moveString):
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
@@ -123,15 +166,13 @@ class Game:
     else:
       self.currentPlayer = self.whitePlayer
     self.hive.zobrist.changeSide()
-    self.currentPlayer.addHiveState(self.hive.zobrist.currentState)
-
 
   def _readMoveList(self, moveListCsv):
     moveList = moveListCsv.split(', ')
     for move in moveList:
       if not move == '':
         move = re.sub('^[0-9]+. ', '', move)
-        self.makeMove(move)
+        self.playMove(move)
 
   def getMoveListCsv(self):
     return ','.join(map(str, self.moveList))

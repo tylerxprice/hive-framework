@@ -38,7 +38,7 @@ class Framework():
         break
       try:
         print self.game.currentPlayer.color.capitalize() + ' plays ' + moveString
-        self.game.makeMove(moveString)
+        self.game.playMove(moveString)
       except InputError as e:
         print e.value
         if self.game.currentPlayer.bot: break;

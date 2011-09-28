@@ -1,6 +1,14 @@
 import logging
 from pieces import *
 from zobrist import *
+from collections import namedtuple
+
+class Point(namedtuple('Point', ['x', 'y', 'z'])):
+  __slots__ = ()
+
+class Move(namedtuple('Move', ['piece', 'startCoorindates', 'endCoordinates'])):
+  __slots__ = ()
+
 
 class Hive:
   """ The Hive "board"
@@ -45,8 +53,8 @@ class Hive:
       board["0,0"] = [wQ]
       board["-1,0"] = [bQ, wB1]   -- the white beetle is on top of of the black queen bee
       board["-1,-1] = [bG1]
-
   """
+
   # relative movement directives (not connectivity)
   (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
 
@@ -80,6 +88,10 @@ class Hive:
     return count
   
 
+  def getState(self):
+    return self.zobrist.currentState
+
+
   def getAdjacentCoordinatesList(self, coordinates):
     return [(coordinates[0], coordinates[1] - 1, 0),      # (x, y-1)    TOPRIGHT
             (coordinates[0] + 1, coordinates[1], 0),      # (x+1, y)    RIGHT
@@ -95,7 +107,6 @@ class Hive:
         return True
 
     return False
-
 
   def doCoordinatesOnlyBorderColor(self, coordinates, color):
     for coordinates in self.getAdjacentCoordinatesList(coordinates):
@@ -358,6 +369,8 @@ class Hive:
 
     for si in s:
       print ''.join(si)
+    print
+
 
   def getBoardLimits(self):
     limits = [0, 0, 0, 0] # xmin, ymin, xmax, ymax
@@ -368,3 +381,4 @@ class Hive:
         limits[2] = max(limits[2], piece.coordinates[0])
         limits[3] = max(limits[3], piece.coordinates[1])
     return limits 
+
