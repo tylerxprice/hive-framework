@@ -5,7 +5,6 @@ import shlex
 import subprocess
 import sys
 from time import time
-from cmd2 import Cmd
 from errors import *
 from game import *
 
@@ -16,13 +15,14 @@ class Framework():
     self.args = self._parseArgs(args)
 
   def _parseArgs(self, args):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='framework', argument_default='')
+    parser.add_argument(args[0], default='') 
     parser.add_argument('--white') 
     parser.add_argument('--black')
     parser.add_argument('--times', default='30000,0,0') # game time, white used, black used (ms)
     parser.add_argument('--moves', default='') # 1. wS1, 2. bG1 -wS1, 3. wQ wS1/, ...
     parser.add_argument('--expansions', default='') # LM
-    args = parser.parse_args(args.split())
+    args = parser.parse_args(args)
     args = vars(args)
     logging.debug('Framework._parseArgs: args = ' + str(args))
     return args
@@ -104,15 +104,6 @@ class Framework():
 
 
 
-class HiveCmd(Cmd):
-  """ Hive Bot Framework """
-  prompt = 'hive> '
-  intro = 'Hive Bot Framework\n------------------'
-
-  def do_game(self, args = ''):
-    Framework(args).run()
-
-
 if __name__ == "__main__": 
-  HiveCmd().cmdloop() 
+  Framework(sys.argv).run()
 

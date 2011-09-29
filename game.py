@@ -101,11 +101,14 @@ class Game:
 
 
   def getValidMoves(self):
+    moveList = []
+
     if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q'):
       # queen must be played in a player's first 4 moves
-      return self.currentPlayer.pieces['Q'].getPossibleCoordinatesList(self.hive)
-
-    moveList = []
+      queenBee = self.currentPlayer.pieces['Q']
+      for coordinates in queenBee.getPossibleCoordinatesList(self.hive):
+        moveList.append(Move(queenBee, queenBee.coordinates, coordinates))
+      return moveList
 
     # may not move a piece until queen is moved
     canMoveHivePieces = True
@@ -121,6 +124,8 @@ class Game:
 
 
   def makeMove(self, move):
+    logging.debug('Game.makeMove: move =' + str(move))
+
     if not move.startCoordinates == (None, None, None):
       self.hive.pickupPiece(move.piece)
     self.hive.putdownPiece(move.piece, move.endCoordinates)
@@ -132,9 +137,13 @@ class Game:
 
 
   def unmakeMove(self, move):
-    if not move.piece.coordinates == (None, None, None):
-      self.hive.pickupPiece(move.piece)
-    self.hive.putdownPiece(move.piece, move.endCoordinates)
+    logging.debug('Game.makeMove: move =' + str(move))
+
+    self.hive.pickupPiece(move.piece)
+    if move.startCoordinates == (None, None, None):
+      move.piece.coordinates = (None, None, None)
+    else:
+      self.hive.putdownPiece(move.piece, move.startCoordinates)
 
     #self.moveList.pop()
     self.turnNumber += 1
@@ -143,43 +152,51 @@ class Game:
     
 
   def getMoveNotation(self, move):
+    logging.debug('Game.getMoveNotation: move = ' + str(move))
+
     moveString = move.piece.getNotation()
 
     #(x, y-1) TOPRIGHT
     coordinates = (move.endCoordinates[0], move.endCoordinates[1] - 1, 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + Hive.TOPRIGHT.strip()+ piece.getNotation()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: topright = ' + str(relativePiece))
+      return moveString + ' ' + Hive.TOPRIGHT.strip()+ relativePiece.getNotation()
 
     #(x+1, y) RIGHT
     coordinates = (move.endCoordinates[0] + 1, move.endCoordinates[1], 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + Hive.RIGHT.strip()+ piece.getNotation()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: right = ' + str(relativePiece))
+      return moveString + ' ' + Hive.RIGHT.strip()+ relativePiece.getNotation()
 
     #(x+1, y+1) BOTTOMRIGHT
     coordinates = (move.endCoordinates[0] + 1, move.endCoordinates[1] + 1, 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + Hive.BOTTOMRIGHT.strip()+ piece.getNotation()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: bottomright = ' + str(relativePiece))
+      return moveString + ' ' + Hive.BOTTOMRIGHT.strip()+ relativePiece.getNotation()
 
     #(x, y+1) BOTTOMLEFT
     coordinates = (move.endCoordinates[0], move.endCoordinates[1] + 1, 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + piece.getNotation() + Hive.BOTTOMLEFT.strip()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: bottomleft = ' + str(relativePiece))
+      return moveString + ' ' + relativePiece.getNotation() + Hive.BOTTOMLEFT.strip()
 
     #(x-1, y) LEFT
     coordinates = (move.endCoordinates[0] - 1, move.endCoordinates[1], 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + piece.getNotation() + Hive.LEFT.strip()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: left = ' + str(relativePiece))
+      return moveString + ' ' + relativePiece.getNotation() + Hive.LEFT.strip()
 
     #(x-1, y-1) TOPLEFT
     coordinates = (move.endCoordinates[0] - 1, move.endCoordinates[1] - 1, 0)
-    piece = self.hive.getTopPieceAtCoordinates(coordinates)
-    if piece:
-      return moveString + ' ' + piece.getNotation() + Hive.TOPLEFT.strip()
+    relativePiece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if relativePiece:
+      logging.debug('Game.getMoveNotation: topleft = ' + str(relativePiece))
+      return moveString + ' ' + relativePiece.getNotation() + Hive.TOPLEFT.strip()
 
     return moveString
 

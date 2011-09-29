@@ -7,7 +7,7 @@ from collections import namedtuple
 class Point(namedtuple('Point', ['x', 'y', 'z'])):
   __slots__ = ()
 
-class Move(namedtuple('Move', ['piece', 'startCoorindates', 'endCoordinates'])):
+class Move(namedtuple('Move', ['piece', 'startCoordinates', 'endCoordinates'])):
   __slots__ = ()
 
 
