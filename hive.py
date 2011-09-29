@@ -4,7 +4,7 @@ from pieces import *
 from zobrist import *
 from collections import namedtuple
 
-class Move(namedtuple('Move', ['piece', 'startCoordinates', 'endCoordinates'])):
+class Move(namedtuple('Move', ['piece', 'startPoint', 'endPoint'])):
   __slots__ = ()
 
 
@@ -36,7 +36,7 @@ class Hive:
       1   2   3   4   5   6   7   8   9   10
 
     The hive is not limited to this 10 by 10 board, the first piece will be placed at (0,0) and it will expand infinitely in both the positive and negative directions. 
-    This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the coordinates we assume the piece with max(z)).
+    This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the point we assume the piece with max(z)).
 
     (x, y) connects to:
       (x, y-1) TOPRIGHT
@@ -62,19 +62,19 @@ class Hive:
     self.zobrist = Zobrist(5 + len(expansions))
 
 
-  def getBoardKey(self, coordinates):
-    return str(coordinates[0]) + ',' + str(coordinates[1])
+  def getBoardKey(self, point):
+    return str(point.x) + ',' + str(point.y)
 
 
-  def getTopPieceAtCoordinates(self, coordinates):
-    key = self.getBoardKey(coordinates)
+  def getTopPieceAtPoint(self, point):
+    key = self.getBoardKey(point)
     if self.board.has_key(key):
       return self.board[key][len(self.board[key]) - 1]
     return None
 
 
-  def getPiecesAtCoordinates(self, coordinates):
-    key = self.getBoardKey(coordinates)
+  def getPiecesAtPoint(self, point):
+    key = self.getBoardKey(point)
     if self.board.has_key(key):
       return self.board[key]
     return []
@@ -91,79 +91,79 @@ class Hive:
     return self.zobrist.currentState
 
 
-  def getAdjacentCoordinatesList(self, coordinates):
-    return [(coordinates[0], coordinates[1] - 1, 0),      # (x, y-1)    TOPRIGHT
-            (coordinates[0] + 1, coordinates[1], 0),      # (x+1, y)    RIGHT
-            (coordinates[0] + 1, coordinates[1] + 1, 0),  # (x+1, y+1)  BOTTOMRIGHT
-            (coordinates[0], coordinates[1] + 1, 0),      # (x, y+1)    BOTTOMLEFT
-            (coordinates[0] - 1, coordinates[1], 0),      # (x-1, y)    LEFT
-            (coordinates[0] - 1, coordinates[1] - 1, 0)] # (x-1, y-1)  TOPLEFT
+  def getAdjacentPoints(self, point):
+    return [Point(point.x, point.y - 1, 0),      # (x, y-1)    TOPRIGHT
+            Point(point.x + 1, point.y, 0),      # (x+1, y)    RIGHT
+            Point(point.x + 1, point.y + 1, 0),  # (x+1, y+1)  BOTTOMRIGHT
+            Point(point.x, point.y + 1, 0),      # (x, y+1)    BOTTOMLEFT
+            Point(point.x - 1, point.y, 0),      # (x-1, y)    LEFT
+            Point(point.x - 1, point.y - 1, 0)] # (x-1, y-1)  TOPLEFT
 
 
-  def areCoordinatesAdjacent(self, firstCoordinates, secondCoordinates):
-    for coordinates in self.getAdjacentCoordinatesList(firstCoordinates):
-      if coordinates[0] == secondCoordinates[0] and coordinates[1] == secondCoordinates[1]:
+  def arePointsAdjacent(self, firstPoint, secondPoint):
+    for point in self.getAdjacentPoints(firstPoint):
+      if point.x == secondPoint.x and point.y == secondPoint.y:
         return True
 
     return False
 
-  def doCoordinatesOnlyBorderColor(self, coordinates, color):
-    for coordinates in self.getAdjacentCoordinatesList(coordinates):
-      coordinatesKey = self.getBoardKey(coordinates)
-      if self.board.has_key(coordinatesKey):
-        piece = self.board[coordinatesKey][len(self.board[coordinatesKey]) - 1]
+  def doesPointOnlyBorderColor(self, point, color):
+    for point in self.getAdjacentPoints(point):
+      pointKey = self.getBoardKey(point)
+      if self.board.has_key(pointKey):
+        piece = self.board[pointKey][len(self.board[pointKey]) - 1]
         if not piece.color == color:
           return False
 
     return True
 
 
-  def areCoordinatesInGate(self, coordinates):
-    """ Coordinates must be bordered on 5+ sides """
+  def isPointInGate(self, point):
+    """ point must be bordered on 5+ sides """
     borderCount = 0
-    for coordinates in self.getAdjacentCoordinatesList(coordinates):
-      piece = self.getTopPieceAtCoordinates(coordinates)
+    for point in self.getAdjacentPoints(point):
+      piece = self.getTopPieceAtPoint(point)
       if piece:
         borderCount += 1
 
     return borderCount >= 5
 
 
-  def getBorderCoordinatesList(self, includeGates):
-    coordinatesList = []
-    uniqueCoordinates = dict()
+  def getBorderPoints(self, includeGates):
+    points = []
+    uniquePoints = dict()
     
     for key, pieces in self.board.iteritems():
       piece = pieces[len(pieces) - 1]
-      for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
-        coordinatesKey = self.getBoardKey(coordinates)
-        if not self.board.has_key(coordinatesKey) and not uniqueCoordinates.has_key(coordinatesKey):
-          if includeGates or not self.areCoordinatesInGate(coordinates):
-            uniqueCoordinates[coordinatesKey] = 1
-            coordinatesList.append(coordinates)
+      for point in self.getAdjacentPoints(piece.point):
+        pointKey = self.getBoardKey(point)
+        if not self.board.has_key(pointKey) and not uniquePoints.has_key(point):
+          if includeGates or not self.isPointInGate(point):
+            uniquePoints[pointKey] = 1
+            points.append(point)
     
-    return coordinatesList; 
+    return points; 
 
 
-  def getEntryCoordinatesList(self, color):
-    coordinatesList = []
-    uniqueCoordinates = dict()
+  def getEntryPoints(self, color):
+    points = []
+    uniquePoints = dict()
 
     for key, pieces in self.board.iteritems():
       piece = pieces[len(pieces) - 1] 
 
-      adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
-      for coordinates in adjacentCoordinatesList:
-        coordinatesKey = self.getBoardKey(coordinates)
-        if not self.board.has_key(coordinatesKey) and not uniqueCoordinates.has_key(coordinatesKey):
-          if self.getNumberOfPieces() == 1 or self.doCoordinatesOnlyBorderColor(coordinates, color):
-            uniqueCoordinates[coordinatesKey] = 1
-            coordinatesList.append(coordinates)
+      adjacentPoints = self.getAdjacentPoints(piece.point)
+      for point in adjacentPoints:
+        pointKey = self.getBoardKey(point)
+        if not self.board.has_key(pointKey) and not uniquePoints.has_key(pointKey):
+          if self.getNumberOfPieces() == 1 or self.doesPointOnlyBorderColor(point, color):
+            uniquePoints[pointKey] = 1
+            points.append(point)
 
-    if len(coordinatesList) == 0:
-      coordinatesList.append((0, 0, 0))
+    if len(points) == 0:
+      points.append(Point(0, 0, 0))
 
-    return coordinatesList; 
+    return points; 
 
 
   def isBrokenWithoutPiece(self, piece):
@@ -182,7 +182,7 @@ class Hive:
     # try to visit all pieces in the hive
     self._visitPiece(rootPiece, visitedPieces)
 
-    self.putdownPiece(piece, piece.coordinates)
+    self.putdownPiece(piece, piece.point)
 
     logging.debug('Hive.isBrokenWithoutPiece: end state, board = ' + str(self.board))
     logging.debug('Hive.isBrokenWithoutPiece: end state, visitedPieces = ' + str(visitedPieces))
@@ -195,12 +195,12 @@ class Hive:
   def _visitPiece(self, piece, visitedPieces):
     logging.debug('Hive.visitPice: visiting = ' + str(piece))
 
-    adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
+    adjacentPoints = self.getAdjacentPoints(piece.point)
     
-    for coordinates in adjacentCoordinatesList:
-      topPiece = self.getTopPieceAtCoordinates(coordinates)
+    for point in adjacentPoints:
+      topPiece = self.getTopPieceAtPoint(point)
       if topPiece and not visitedPieces.has_key(topPiece.getNotation()):
-        for p in self.getPiecesAtCoordinates(coordinates):
+        for p in self.getPiecesAtPoint(point):
           visitedPieces[p.getNotation()] = 1
         self._visitPiece(topPiece, visitedPieces)
 
@@ -213,39 +213,39 @@ class Hive:
     return None 
 
   
-  def getRelativeCoordinates(self, piece, relativePiece, relativePosition):
-    newCoordinates = (0,0,0)
+  def getRelativePoint(self, piece, relativePiece, relativePosition):
+    newPoint = Point(0,0,0)
     if relativePiece:
-      logging.debug('Hive.getRelativeCoordinates: relativePiece=' + str(relativePiece))
-      logging.debug('Hive.getRelativeCoordinates: relativePosition=' + relativePosition)
+      logging.debug('Hive.getRelativePoint: relativePiece=' + str(relativePiece))
+      logging.debug('Hive.getRelativePoint: relativePosition=' + relativePosition)
 
-      relativeCoordinates = relativePiece.coordinates
+      relativePoint = relativePiece.point
       if relativePosition == Hive.TOPRIGHT:
-        logging.debug('Hive.getRelativeCoordinates: TOPRIGHT')
-        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] - 1, 0)
+        logging.debug('Hive.getRelativePoint: TOPRIGHT')
+        newPoint = Point(relativePoint.x, relativePoint.y - 1, 0)
       elif relativePosition == Hive.RIGHT:
-        logging.debug('Hive.getRelativeCoordinates: RIGHT')
-        newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1], 0)
+        logging.debug('Hive.getRelativePoint: RIGHT')
+        newPoint = Point(relativePoint.x + 1, relativePoint.y, 0)
       elif relativePosition == Hive.BOTTOMRIGHT:
-        logging.debug('Hive.getRelativeCoordinates: BOTTOMRIGHT')
-        newCoordinates = (relativeCoordinates[0] + 1, relativeCoordinates[1] + 1, 0)
+        logging.debug('Hive.getRelativePoint: BOTTOMRIGHT')
+        newPoint = Point(relativePoint.x + 1, relativePoint.y + 1, 0)
       elif relativePosition == Hive.BOTTOMLEFT:
-        logging.debug('Hive.getRelativeCoordinates: BOTTOMLEFT')
-        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1] + 1, 0)
+        logging.debug('Hive.getRelativePoint: BOTTOMLEFT')
+        newPoint = Point(relativePoint.x, relativePoint.y + 1, 0)
       elif relativePosition == Hive.LEFT:
-        logging.debug('Hive.getRelativeCoordinates: LEFT')
-        newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1], 0)
+        logging.debug('Hive.getRelativePoint: LEFT')
+        newPoint = Point(relativePoint.x - 1, relativePoint.y, 0)
       elif relativePosition == Hive.TOPLEFT:
-        logging.debug('Hive.getRelativeCoordinates: TOPLEFT')
-        newCoordinates = (relativeCoordinates[0] - 1, relativeCoordinates[1] - 1, 0)
+        logging.debug('Hive.getRelativePoint: TOPLEFT')
+        newPoint = Point(relativePoint.x - 1, relativePoint.y - 1, 0)
       elif relativePosition == Hive.COVER:
-        logging.debug('Hive.getRelativeCoordinates: COVER')
-        newCoordinates = (relativeCoordinates[0], relativeCoordinates[1], relativeCoordinates[2] + 1)
-    return newCoordinates
+        logging.debug('Hive.getRelativePoint: COVER')
+        newPoint = Point(relativePoint.x, relativePoint.y, relativePoint.z + 1)
+    return newPoint
 
 
   def pickupPiece(self, piece):
-    key = self.getBoardKey(piece.coordinates)
+    key = self.getBoardKey(piece.point)
     if len(self.board[key]) == 1:
       del self.board[key]
     else:
@@ -253,19 +253,19 @@ class Hive:
     self.zobrist.updateState(piece)
 
 
-  def putdownPiece(self, piece, coordinates):
-    key = self.getBoardKey(coordinates)
+  def putdownPiece(self, piece, point):
+    key = self.getBoardKey(point)
     if self.board.has_key(key):
       z = -1
       for p in self.board[key]:
-        z = max(p.coordinates[2], z)
+        z = max(p.point.z, z)
       z += 1
-      coordinates = (coordinates[0], coordinates[1], z)
+      point = Point(point.x, point.y, z)
       self.board[key].append(piece)
     else:
       self.board[key] = [piece]
 
-    piece.coordinates = coordinates
+    piece.point = point
     self.zobrist.updateState(piece)
   
 
@@ -276,8 +276,8 @@ class Hive:
       for piece in pieces:
         if piece.kind == 'Q':
           isSurrounded = True
-          for coordinates in self.getAdjacentCoordinatesList(piece.coordinates):
-            if not self.getTopPieceAtCoordinates(coordinates):
+          for point in self.getAdjacentPoints(piece.point):
+            if not self.getTopPieceAtPoint(point):
               isSurrounded = False
               break
           if isSurrounded:
@@ -345,7 +345,7 @@ class Hive:
         if absy == height: # x-axis
           s[sy][sx] = str(x)
         else:
-          key = self.getBoardKey((x, y))
+          key = self.getBoardKey(Point(x, y, 0))
           if self.board.has_key(key):
             piece = self.board[key][len(self.board[key]) - 1]
             s[sy][sx-1] = piece.color
@@ -376,9 +376,9 @@ class Hive:
     limits = [0, 0, 0, 0] # xmin, ymin, xmax, ymax
     for key in self.board.keys():
       for piece in self.board[key]:
-        limits[0] = min(limits[0], piece.coordinates[0])
-        limits[1] = min(limits[1], piece.coordinates[1])
-        limits[2] = max(limits[2], piece.coordinates[0])
-        limits[3] = max(limits[3], piece.coordinates[1])
+        limits[0] = min(limits[0], piece.point.x)
+        limits[1] = min(limits[1], piece.point.y)
+        limits[2] = max(limits[2], piece.point.x)
+        limits[3] = max(limits[3], piece.point.y)
     return limits 
 

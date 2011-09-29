@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 
 class Point(namedtuple('Point', ['x', 'y', 'z'])):
+  NONE = (None, None, None)
   __slots__ = ()
 
 class Piece:
@@ -11,7 +12,7 @@ class Piece:
     self.color = color # w, b
     self.kind = kind # A, B, G, Q, S
     self.number = number # '', 1, 2, 3
-    self.coordinates = (None, None, None) # (x,y,z)
+    self.point = Point.NONE # (x,y,z)
 
 
   def getColorIndex(self):
@@ -23,24 +24,24 @@ class Piece:
 
 
   def getNotation(self):
-    return self.color + self.kind + str(self.number)#+ ' @ ' + str(self.coordinates)
+    return self.color + self.kind + str(self.number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    if self.coordinates == (None,None,None): # not on board yet
-      return hive.getEntryCoordinatesList(self.color)
-    elif not self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle pinned
-      logging.debug('Piece.getPossibleCoordinatesList: piece beetle pinned')
+  def getPossiblePoints(self, hive):
+    if self.point == Point(None,None,None): # not on board yet
+      return hive.getEntryPoints(self.color)
+    elif not self == hive.getTopPieceAtPoint(self.point): # beetle pinned
+      logging.debug('Piece.getPossiblePoints: piece beetle pinned')
       return []
-    elif hive.isBrokenWithoutPiece(self): # if picking up breaks hive: 0 possible coordinates
-      logging.debug('Piece.getPossibleCoordinatesList: breaks hive')
+    elif hive.isBrokenWithoutPiece(self): # if picking up breaks hive: 0 possible points
+      logging.debug('Piece.getPossiblePoints: breaks hive')
       return []
 
     return None
 
 
   def __repr__(self):
-    return self.color + self.kind + str(self.number) + ' @ ' + str(self.coordinates)
+    return self.color + self.kind + str(self.number) + ' @ ' + str(self.point)
 
 
 
@@ -52,34 +53,34 @@ class QueenBeePiece(Piece):
     Piece.__init__(self, color, 'Q', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
     # can move 1 empty hex away, but cannot enter gates
-    possibleCoordinatesList = []
+    possiblePoints = []
     
     # get adjacencies
-    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
+    adjacentPoints = hive.getAdjacentPoints(self.point)
 
     # partition into occupied and free (exclude gates)
-    occupiedAdjacentCoordinatesList = []
-    freeAdjacentCoordinatesList = []
-    for adjacentCoordinates in adjacentCoordinatesList:
-      if hive.getTopPieceAtCoordinates(adjacentCoordinates):
-        occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
-      elif not hive.areCoordinatesInGate(adjacentCoordinates):
-        freeAdjacentCoordinatesList.append(adjacentCoordinates)
+    occupiedAdjacentPoints = []
+    freeAdjacentPoints = []
+    for adjacentPoint in adjacentPoints:
+      if hive.getTopPieceAtPoint(adjacentPoint):
+        occupiedAdjacentPoints.append(adjacentPoint)
+      elif not hive.isPointInGate(adjacentPoint):
+        freeAdjacentPoints.append(adjacentPoint)
 
     # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-    for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
-      for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
-        if hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
-          possibleCoordinatesList.append(freeAdjacentCoordinates)
+    for freeAdjacentPoint in freeAdjacentPoints:
+      for occupiedAdjacentPoint in occupiedAdjacentPoints:
+        if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
+          possiblePoints.append(freeAdjacentPoint)
           break
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
 
@@ -91,46 +92,46 @@ class SpiderPiece(Piece):
     Piece.__init__(self, color, 'S', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
     # can move 3 emtpy hex away, but cannot enter gates and cannot backtrack
-    possibleCoordinatesList = []
+    possiblePoints = []
 
     # find all 3 node segments in the graph that is the non-gate border nodes starting at the current node
     hive.pickupPiece(self)
-    self._visitCoordinate(self.coordinates, 0, [], possibleCoordinatesList, hive)
-    hive.putdownPiece(self, self.coordinates)
+    self._visitPoint(self.point, 0, [], possiblePoints, hive)
+    hive.putdownPiece(self, self.point)
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
-  def _visitCoordinate(self, coordinates, depth, currentPath, possibleCoordinatesList, hive):
+  def _visitPoint(self, point, depth, currentPath, possiblePoints, hive):
     if depth == 3:
-      if not coordinates in possibleCoordinatesList:
-        possibleCoordinatesList.append(coordinates)
+      if not point in possiblePoints:
+        possiblePoints.append(point)
         return
 
-    currentPath.append(coordinates)
+    currentPath.append(point)
 
     # get adjacencies
-    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
+    adjacentPoints = hive.getAdjacentPoints(point)
 
     # partition into occupied and free (exclude) gates
-    occupiedAdjacentCoordinatesList = []
-    freeAdjacentCoordinatesList = []
-    for adjacentCoordinates in adjacentCoordinatesList:
-      if hive.getTopPieceAtCoordinates(adjacentCoordinates):
-        occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
-      elif not hive.areCoordinatesInGate(adjacentCoordinates):
-        freeAdjacentCoordinatesList.append(adjacentCoordinates)
+    occupiedAdjacentPoints = []
+    freeAdjacentPoints = []
+    for adjacentPoint in adjacentPoints:
+      if hive.getTopPieceAtPoint(adjacentPoint):
+        occupiedAdjacentPoints.append(adjacentPoint)
+      elif not hive.isPointInGate(adjacentPoint):
+        freeAdjacentPoints.append(adjacentPoint)
     
-    for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
-      for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
-        if not freeAdjacentCoordinates in currentPath and hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
-          self._visitCoordinate(freeAdjacentCoordinates, depth + 1, currentPath, possibleCoordinatesList, hive)
+    for freeAdjacentPoint in freeAdjacentPoints:
+      for occupiedAdjacentPoint in occupiedAdjacentPoints:
+        if not freeAdjacentPoint in currentPath and hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
+          self._visitPoint(freeAdjacentPoint, depth + 1, currentPath, possiblePoints, hive)
           break
 
 
@@ -143,39 +144,39 @@ class BeetlePiece(Piece):
     Piece.__init__(self, color, 'B', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
-    possibleCoordinatesList = []
+    possiblePoints = []
 
-    if self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle on top: can move to any adjacent hex
-      possibleCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
+    if self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
+      possiblePoints = hive.getAdjacentPoints(self.point)
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
       # get adjacencies
-      adjacentCoordinatesList = hive.getAdjacentCoordinatesList(self.coordinates)
+      adjacentPoints = hive.getAdjacentPoints(self.point)
 
       # partition into occupied and free (exclude) gates
-      occupiedAdjacentCoordinatesList = []
-      freeAdjacentCoordinatesList = []
-      for adjacentCoordinates in adjacentCoordinatesList:
-        if hive.getTopPieceAtCoordinates(adjacentCoordinates):
-          occupiedAdjacentCoordinatesList.append(adjacentCoordinates)
-        elif not hive.areCoordinatesInGate(adjacentCoordinates):
-          freeAdjacentCoordinatesList.append(adjacentCoordinates)
+      occupiedAdjacentPoints = []
+      freeAdjacentPoints = []
+      for adjacentPoint in adjacentPoints:
+        if hive.getTopPieceAtPoint(adjacentPoint):
+          occupiedAdjacentPoints.append(adjacentPoint)
+        elif not hive.isPointInGate(adjacentPoint):
+          freeAdjacentPoints.append(adjacentPoint)
 
       # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-      for freeAdjacentCoordinates in freeAdjacentCoordinatesList:
-        for occupiedAdjacentCoordinates in occupiedAdjacentCoordinatesList:
-          if hive.areCoordinatesAdjacent(freeAdjacentCoordinates, occupiedAdjacentCoordinates):
-            possibleCoordinatesList.append(freeAdjacentCoordinates)
+      for freeAdjacentPoint in freeAdjacentPoints:
+        for occupiedAdjacentPoint in occupiedAdjacentPoints:
+          if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
+            possiblePoints.append(freeAdjacentPoint)
             break
 
       # can also move on to occupied adjacent hexes
-      possibleCoordinatesList.extend(occupiedAdjacentCoordinatesList)
+      possiblePoints.extend(occupiedAdjacentPoints)
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
 class AntPiece(Piece):
@@ -185,18 +186,18 @@ class AntPiece(Piece):
   def __init__(self, color, number):
     Piece.__init__(self, color, 'A', number)
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
     # can move to any non-gate hex around hive
     hive.pickupPiece(self)
-    possibleCoordinatesList = hive.getBorderCoordinatesList(False) # False = exclude gates
-    possibleCoordinatesList.remove(self.coordinates)
-    hive.putdownPiece(self, self.coordinates)
+    possiblePoints = hive.getBorderPoints(False) # False = exclude gates
+    possiblePoints.remove(self.point)
+    hive.putdownPiece(self, self.point)
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
 class GrasshopperPiece(Piece):
@@ -207,76 +208,76 @@ class GrasshopperPiece(Piece):
     Piece.__init__(self, color, 'G', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
     # can move in straight lines from current hex, but must stop at first space 
-    # in each direction, starting one occupied space over, find first borderCoordinates
-    possibleCoordinatesList = []
+    # in each direction, starting one occupied space over, find first borderPoint
+    possiblePoints = []
 
     #(x, y-1) TOPRIGHT
-    coordinates = (self.coordinates[0], self.coordinates[1] - 1, 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x, self.point.y - 1, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0], coordinates[1] - 1, 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x, point.y - 1, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
     #(x+1, y) RIGHT
-    coordinates = (self.coordinates[0] + 1, self.coordinates[1], 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x + 1, self.point.y, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0] + 1, coordinates[1], 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x + 1, point.y, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
     #(x+1, y+1) BOTTOMRIGHT
-    coordinates = (self.coordinates[0] + 1, self.coordinates[1] + 1, 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x + 1, self.point.y + 1, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0] + 1, coordinates[1] + 1, 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x + 1, point.y + 1, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
     #(x, y+1) BOTTOMLEFT
-    coordinates = (self.coordinates[0], self.coordinates[1] + 1, 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x, self.point.y + 1, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0], coordinates[1] + 1, 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x, point.y + 1, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
     #(x-1, y) LEFT
-    coordinates = (self.coordinates[0] - 1, self.coordinates[1], 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x - 1, self.point.y, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0] - 1, coordinates[1], 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x - 1, point.y, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
     #(x-1, y-1) TOPLEFT
-    coordinates = (self.coordinates[0] - 1, self.coordinates[1] - 1, 0)
-    piece = hive.getTopPieceAtCoordinates(coordinates)
+    point = Point(self.point.x - 1, self.point.y - 1, 0)
+    piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
-        coordinates = (coordinates[0] - 1, coordinates[1] - 1, 0)
-        if not hive.getTopPieceAtCoordinates(coordinates):
-          possibleCoordinatesList.append(coordinates)
+        point = Point(point.x - 1, point.y - 1, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
           break
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
   
@@ -288,34 +289,34 @@ class LadybugPiece(Piece):
     Piece.__init__(self, color, 'L', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
-    possibleCoordinatesList = []
+    possiblePoints = []
 
     hive.pickupPiece(self)
-    self._visitCoordinate(self.coordinates, 0, [], possibleCoordinatesList, hive)
-    hive.putdownPiece(self, self.coordinates)
+    self._visitPoint(self.point, 0, [], possiblePoints, hive)
+    hive.putdownPiece(self, self.point)
 
-    return possibleCoordinatesList
+    return possiblePoints
 
 
-  def _visitCoordinate(self, coordinates, depth, currentPath, possibleCoordinatesList, hive):
+  def _visitPoint(self, point, depth, currentPath, possiblePoints, hive):
     if depth == 3:
-      if not coordinates in possibleCoordinatesList:
-        possibleCoordinatesList.append(coordinates)
+      if not point in possiblePoints:
+        possiblePoints.append(point)
         return
 
-    currentPath.append(coordinates)
+    currentPath.append(point)
 
-    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
-    for adjacentCoordinates in adjacentCoordinatesList:
-      if depth in (0, 1) and hive.getTopPieceAtCoordinates(adjacentCoordinates):
-        self._visitCoordinates(adjacentCoordinates, depth - 1, currentPath, possibleCoordinatesList, hive)
-      if depth == 2 and not hive.getTopPieceAtCoordinates(adjacentCoordiantes):
-        self._visitCoordinates(adjacentCoordinates, depth - 1, currentPath, possibleCoordinatesList, hive)
+    adjacentPoints = hive.getAdjacentPoints(point)
+    for adjacentPoint in adjacentPoints:
+      if depth in (0, 1) and hive.getTopPieceAtPoint(adjacentPoint):
+        self._visitPoint(adjacentPoint, depth - 1, currentPath, possiblePoints, hive)
+      if depth == 2 and not hive.getTopPieceAtPoint(adjacentPoint):
+        self._visitPoint(adjacentPoint, depth - 1, currentPath, possiblePoints, hive)
 
 
 class MosquitoPiece(QueenBeePiece, SpiderPiece, BeetlePiece, AntPiece, GrasshopperPiece, LadybugPiece, Piece):
@@ -326,19 +327,19 @@ class MosquitoPiece(QueenBeePiece, SpiderPiece, BeetlePiece, AntPiece, Grasshopp
     Piece.__init__(self, color, 'M', number)
 
 
-  def getPossibleCoordinatesList(self, hive):
-    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
-    if not possibleCoordinatesList == None:
-      return possibleCoordinatesList
+  def getPossiblePoints(self, hive):
+    possiblePoints = Piece.getPossiblePoints(self, hive)
+    if not possiblePoints == None:
+      return possiblePoints
 
-    possibleCoordinatesList = []
+    possiblePoints = []
 
-    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
-    for adjacentCoordinates in adjacentCoordinatesList:
-      piece = hive.getTopPieceAtCoordinates(adjacentCoordinates)
+    adjacentPoints = hive.getAdjacentPoints(point)
+    for adjacentPoint in adjacentPoints:
+      piece = hive.getTopPieceAtPoint(adjacentPoint)
       if piece:
-        kindPossibleCoordinatesList = piece.__class__.getPossibleCoordinatesList(self, hive)
-        possibleCoordinatesList = possibleCoordinatesList + filter(lambda x:x not in possibleCoordinatesList, kindPossibleCoordinatesList)
+        kindPossiblePoints = piece.__class__.getPossiblePoints(self, hive)
+        possiblePoints = possiblePoints + filter(lambda x:x not in possiblePoints, kindPossiblePoints)
 
-    return possibleCoordinatesList
+    return possiblePoints
 

@@ -1,5 +1,6 @@
 import logging
 import random
+from pieces import Point
 
 class Zobrist:
   """ This is a modification of Zobrist keys: they are lazily generated into a dictionary since the number of different hexes a piece can land throughout the game on is indeterminate. """
@@ -10,12 +11,12 @@ class Zobrist:
     self.currentState = 0L
 
 
-  def _getDictKey(self, coordinates = (None, None, None)):
-    return str(coordinates[0]) + ',' +  str(coordinates[1]) + ',' + str(coordinates[2])
+  def _getDictKey(self, point = Point(None, None, None)):
+    return str(point.x) + ',' +  str(point.y) + ',' + str(point.z)
 
 
-  def _getZobristKey(self, colorIndex, kindIndex, coordinates = (None, None, None)):
-    dictKey = self._getDictKey(coordinates)
+  def _getZobristKey(self, colorIndex, kindIndex, point = Point(None, None, None)):
+    dictKey = self._getDictKey(point)
     if not self.zobristKeys[colorIndex][kindIndex].has_key(dictKey):
       self.zobristKeys[colorIndex][kindIndex][dictKey] = self._generateRandomNumber()
     return self.zobristKeys[colorIndex][kindIndex][dictKey]
@@ -31,7 +32,7 @@ class Zobrist:
 
 
   def updateState(self, piece):
-    key = self._getZobristKey(piece.getColorIndex(), piece.getKindIndex(), piece.coordinates)
+    key = self._getZobristKey(piece.getColorIndex(), piece.getKindIndex(), piece.point)
     self.currentState = self.currentState ^ key
     logging.debug('Zobrist.updateState: state = ' + str(self.currentState))
 
