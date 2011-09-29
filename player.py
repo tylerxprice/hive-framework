@@ -7,6 +7,7 @@ class Player:
     self.pieces = dict()
     self.setupStartingPieces(color[0])
     self.seenHiveStates = []
+    self.timeUsed = 0
 
 
   def setupStartingPieces(self, color):

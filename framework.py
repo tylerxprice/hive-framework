@@ -4,13 +4,12 @@ import os
 import shlex
 import subprocess
 import sys
-import time
+from time import time
 from cmd2 import Cmd
 from errors import *
-from player import *
 from game import *
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -37,13 +36,13 @@ class Framework():
       if moveString == 'quit' or moveString == 'exit':
         break
       try:
-        print self.game.currentPlayer.color.capitalize() + ' plays ' + moveString
+        sys.stdout.write(self.game.currentPlayer.color.capitalize() + ' plays ' + moveString + '\n')
         self.game.playMove(moveString)
       except InputError as e:
-        print e.value
+        sys.stderr.write(e.value + '\n')
         if self.game.currentPlayer.bot: break;
       except MoveError as e:
-        print e.value
+        sys.stderr.write(e.value + '\n')
         if self.game.currentPlayer.bot: break;
       else:
         self.game.printBoard()
@@ -54,14 +53,14 @@ class Framework():
       if not bot:
         bot = raw_input(color.capitalize() + " player bot (blank for human): ")
       else:
-        print color.capitalize() + " player bot (blank for human): " + bot
+        sys.stdout.write(color.capitalize() + " player bot (blank for human): " + bot + "\n")
 
       if bot == '':
         return None
       elif os.path.exists(bot):
         return bot
       else:
-        print "Couldn't locate the bot. Try again."
+        sys.stdout.write("Couldn't locate the bot. Try again.\n")
         bot = None
     return None
 
@@ -70,18 +69,25 @@ class Framework():
     moveString = 'error'
     if self.game.currentPlayer.bot:
       try:
-        commandLine = self.game.currentPlayer.bot + '--times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMovesListCsv() + '"'
+        bot = self.game.currentPlayer.bot
+        if bot.endswith('.py'):
+          bot = 'python ' + bot
+
+        commandLine = bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
+        logging.debug('Framework.readMove: commandLine = ' + commandLine)
         args = shlex.split(commandLine)
         startTime = time()
         botProcess = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
-        moveString = botProcess.communicate()[0]
+        moveString, errorOutput = botProcess.communicate()
+        sys.stderr.write(errorOutput)
+        logging.debug('Framework.readMove: moveString = ' + moveString)
         endTime = time()
-        totalTime = endTime - startTime()
+        totalTime = round((endTime - startTime) * 100)
         self.game.currentPlayer.timeUsed += totalTime
-        logging.debug('Framework.readMove bottime = ' + str (totalTime))
+        logging.debug('Framework.readMove: bottime = ' + str(totalTime))
       except OSError as details:
-        logging.debug('Framework.readMOve OSError = ' + str(details))
-        raise InputError(player.bot + ' process failed to execute')
+        logging.debug('Framework.readMove: OSError = ' + str(details))
+        raise InputError(self.game.currentPlayer.bot + ' process failed to execute')
     else:
       moveString = raw_input(self.game.currentPlayer.color.capitalize() + "'s turn: ")
 

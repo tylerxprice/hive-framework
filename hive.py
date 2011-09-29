@@ -1,4 +1,5 @@
 import logging
+import sys
 from pieces import *
 from zobrist import *
 from collections import namedtuple
@@ -301,13 +302,13 @@ class Hive:
     """
       Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
            sx        111111
-           0123456789012345   y
-       sy 0   / \ / \ / \                    
-          1  | . | . | . |  0
-          2 / \ / \ / \ /  
-          3| . | . | .  1
-          4 \ / \ /    
-           0   1   2  x
+           0123456789012345  y
+       sy 0   / \ / \ / \     
+          1  | . | . | . | 0  
+          2 / \ / \ / \ /     
+          3| . | . | .   1    
+          4 \ / \ /           
+           0   1   2   x      
 
       Char array indices are on the left and top axes, hex indices on the bottom and right axies
       hex   -> char
@@ -321,9 +322,7 @@ class Hive:
       sx = 4*x - 2*y + 2*h
       sy = 2*y + 1
       h = max(y)
-
     """
-    logging.debug('Hive.printBoard: board=' + str(self.board))
 
     # get max and min x/y values
     # iterate through all x,y printing empty piece or top most piece
@@ -338,38 +337,51 @@ class Hive:
 
     # build a 2D array of chars that will eventually be printed
     s = []
-    for i in range (2 * height):
-      s.append([' '] * (4 * width + 2 * height))
+    for i in range (2 * height + 2):
+      s.append([' '] * (4 * width + 2 * height + 1))
 
     #logging.debug('Hive.printBoard: s_dims=' + str(len(s[0])) + 'x' + str(len(s)))
 
-    for y in range(limits[1], limits[3] + 1): # height/rows
+    for y in range(limits[1], limits[3] + 2): # height/rows
       absy = y - limits[1]
       sy = 2 * absy + 1 #magic mapping formula
+      
+      if absy < height: # y-axis
+        axisy = 4 * width - 2 * absy + 2 * height
+        s[sy][axisy] = str(y)
 
       for x in range(limits[0], limits[2] + 1): # width/columns
         absx = x - limits[0]
         sx = 4 * absx - 2 * absy + 2 * height #magic mapping formula
-        #logging.debug('Hive.printBoard: (x,y)=(' + str(x) + ',' + str(y) + '), (absx,absy)=' + str(absx) + ',' + str(absy) + '), (sx,sy)=' + str(sx) + ',' + str(sy) + ')')
-        key = self.getBoardKey((x, y))
-        if self.board.has_key(key):
-          piece = self.board[key][len(self.board[key]) - 1]
-          s[sy][sx-1] = piece.color
-          s[sy][sx] = piece.kind
-          s[sy][sx+1] = str(piece.number) if piece.number else ' '
-          s[sy-1][sx-1] = '/'
-          s[sy][sx-2] = '|'
-          s[sy+1][sx-1] = '\\'
-          s[sy+1][sx+1] = '/'
-          s[sy][sx+2] = '|'
-          s[sy-1][sx+1] = '\\'
+
+        if absy == height: # x-axis
+          s[sy][sx] = str(x)
         else:
-          s[sy][sx] = '.'
+          key = self.getBoardKey((x, y))
+          if self.board.has_key(key):
+            piece = self.board[key][len(self.board[key]) - 1]
+            s[sy][sx-1] = piece.color
+            s[sy][sx] = piece.kind
+            s[sy][sx+1] = str(piece.number) if piece.number else ' '
+            s[sy-1][sx-1] = '/'
+            s[sy][sx-2] = '|'
+            s[sy+1][sx-1] = '\\'
+            s[sy+1][sx+1] = '/'
+            s[sy][sx+2] = '|'
+            s[sy-1][sx+1] = '\\'
+          else:
+            s[sy][sx] = '.'
         
 
+    sys.stderr.write('   ' + (' ' *  (4 * (width + 2)) + 'y\n'))
     for si in s:
-      print ''.join(si)
-    print
+      if s.index(si) == len(s) - 1:
+        sys.stderr.write('x   ')
+      else:
+        sys.stderr.write('    ')
+      sys.stderr.write(''.join(si) + '\n')
+
+    sys.stderr.write('\n')
 
 
   def getBoardLimits(self):

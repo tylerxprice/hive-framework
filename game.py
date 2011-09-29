@@ -1,13 +1,14 @@
 import logging
 import re
 import sys
-from cmd2 import Cmd
 from errors import *
 from pieces import *
 from player import *
 from hive import *
 
 class Game:
+  (WINNER_WHITE, WINNER_BLACK, WINNER_DRAW, WINNER_NONE) = (1, -1, 0, None)
+
   def __init__(self, whiteBot, blackBot, timeControls, moveList):
     self.whitePlayer = Player('white', whiteBot)
     self.blackPlayer = Player('black', blackBot)
@@ -67,23 +68,26 @@ class Game:
 
 
   def isGameOver(self):
+    return not self.getWinner() == Game.WINNER_NONE
+
+
+  def getWinner(self):
     surrounded = self.hive.getSurroundedQueenColors() # check for wins/stalemate (via surrounding)
     logging.debug('Game.isGameOver surrounded = ' + str(surrounded))
     if len(surrounded) > 0:
       if len(surrounded) == 2:
-        self.winner = 'draw'
+        return Game.WINNER_DRAW
       elif surrounded[0] == 'w':
-        self.winner = 'black'
+        return Game.WINNER_BLACK
       else:
-        self.winner = 'white'
+        return Game.WINNER_WHITE
       return True
     
     # check for stalemate (via threefold repetition)
     if self.currentPlayer.hasSeenThreefoldRepetition():
-      self.winner = 'draw'
-      return True
+      return Game.WINNER_DRAW
 
-    return False
+    return Game.WINNER_NONE
     
 
   def isValidMove(self, proposedCoordinates, possibleCoordinatesList):
@@ -97,8 +101,8 @@ class Game:
 
 
   def getValidMoves(self):
-    # queen must be played in a player's first 4 moves
     if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q'):
+      # queen must be played in a player's first 4 moves
       return self.currentPlayer.pieces['Q'].getPossibleCoordinatesList(self.hive)
 
     moveList = []
@@ -114,6 +118,7 @@ class Game:
           moveList.append(Move(piece, piece.coordinates, coordinates))
 
     return moveList
+
 
   def makeMove(self, move):
     if not move.startCoordinates == (None, None, None):
@@ -136,6 +141,48 @@ class Game:
     self.switchCurrentPlayer()
     self.currentPlayer.removeHiveState()
     
+
+  def getMoveNotation(self, move):
+    moveString = move.piece.getNotation()
+
+    #(x, y-1) TOPRIGHT
+    coordinates = (move.endCoordinates[0], move.endCoordinates[1] - 1, 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + Hive.TOPRIGHT.strip()+ piece.getNotation()
+
+    #(x+1, y) RIGHT
+    coordinates = (move.endCoordinates[0] + 1, move.endCoordinates[1], 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + Hive.RIGHT.strip()+ piece.getNotation()
+
+    #(x+1, y+1) BOTTOMRIGHT
+    coordinates = (move.endCoordinates[0] + 1, move.endCoordinates[1] + 1, 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + Hive.BOTTOMRIGHT.strip()+ piece.getNotation()
+
+    #(x, y+1) BOTTOMLEFT
+    coordinates = (move.endCoordinates[0], move.endCoordinates[1] + 1, 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + piece.getNotation() + Hive.BOTTOMLEFT.strip()
+
+    #(x-1, y) LEFT
+    coordinates = (move.endCoordinates[0] - 1, move.endCoordinates[1], 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + piece.getNotation() + Hive.LEFT.strip()
+
+    #(x-1, y-1) TOPLEFT
+    coordinates = (move.endCoordinates[0] - 1, move.endCoordinates[1] - 1, 0)
+    piece = self.hive.getTopPieceAtCoordinates(coordinates)
+    if piece:
+      return moveString + ' ' + piece.getNotation() + Hive.TOPLEFT.strip()
+
+    return moveString
+
 
   def validateMoveString(self, moveString):
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
@@ -167,6 +214,7 @@ class Game:
       self.currentPlayer = self.whitePlayer
     self.hive.zobrist.changeSide()
 
+
   def _readMoveList(self, moveListCsv):
     moveList = moveListCsv.split(', ')
     for move in moveList:
@@ -174,15 +222,17 @@ class Game:
         move = re.sub('^[0-9]+. ', '', move)
         self.playMove(move)
 
+
   def getMoveListCsv(self):
-    return ','.join(map(str, self.moveList))
+    return ', '.join(map(str, self.moveList))
 
 
   def _readTimeControls(self, timeControlsCsv):
     timeControls = timeControlsCsv.split(',')
-    self.gameTime = timeControls[0]
-    self.whitePlayer.timeUsed = timeControls[1]
-    self.blackPlayer.timeUsed = timeControls[2]
+    self.gameTime = float(timeControls[0])
+    self.whitePlayer.timeUsed = float(timeControls[1])
+    self.blackPlayer.timeUsed = float(timeControls[2])
+
 
   def getTimeControlsCsv(self):
     return str(self.gameTime) + ',' + str(self.whitePlayer.timeUsed) + ',' + str(self.blackPlayer.timeUsed)
