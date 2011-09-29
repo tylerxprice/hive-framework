@@ -1,4 +1,8 @@
 import logging
+from collections import namedtuple
+
+class Point(namedtuple('Point', ['x', 'y', 'z'])):
+  __slots__ = ()
 
 class Piece:
   (COLORSTRING, KINDSTRING) = ('wb', 'ABGQSML')
@@ -24,7 +28,6 @@ class Piece:
 
   def getPossibleCoordinatesList(self, hive):
     if self.coordinates == (None,None,None): # not on board yet
-      logging.debug('Piece.getPossibleCoordinatesList: piece not on board')
       return hive.getEntryCoordinatesList(self.color)
     elif not self == hive.getTopPieceAtCoordinates(self.coordinates): # beetle pinned
       logging.debug('Piece.getPossibleCoordinatesList: piece beetle pinned')

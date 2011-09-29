@@ -79,6 +79,8 @@ class Framework():
     if self.game.currentPlayer.bot:
       try:
         bot = self.game.currentPlayer.bot
+
+        # script bot hacks
         if bot.endswith('.py'):
           bot = 'python ' + bot
 
@@ -89,11 +91,9 @@ class Framework():
         botProcess = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
         moveString, errorOutput = botProcess.communicate()
         sys.stderr.write(errorOutput)
-        logging.debug('Framework.readMove: moveString = ' + moveString)
         endTime = time()
         totalTime = round((endTime - startTime) * 100)
         self.game.currentPlayer.timeUsed += totalTime
-        logging.debug('Framework.readMove: bottime = ' + str(totalTime))
       except OSError as details:
         logging.debug('Framework.readMove: OSError = ' + str(details))
         raise InputError(self.game.currentPlayer.bot + ' process failed to execute')

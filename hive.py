@@ -4,11 +4,9 @@ from pieces import *
 from zobrist import *
 from collections import namedtuple
 
-class Point(namedtuple('Point', ['x', 'y', 'z'])):
-  __slots__ = ()
-
 class Move(namedtuple('Move', ['piece', 'startCoordinates', 'endCoordinates'])):
   __slots__ = ()
+
 
 
 class Hive:
@@ -155,9 +153,6 @@ class Hive:
       piece = pieces[len(pieces) - 1] 
 
       adjacentCoordinatesList = self.getAdjacentCoordinatesList(piece.coordinates)
-      logging.debug('Hive.getEntryCoordinatesList(' + color + '): piece=' + str(piece))
-      logging.debug('Hive.getEntryCoordinatesList(' + color + '): adjacentCoordinatesList=' + str(adjacentCoordinatesList))
-
       for coordinates in adjacentCoordinatesList:
         coordinatesKey = self.getBoardKey(coordinates)
         if not self.board.has_key(coordinatesKey) and not uniqueCoordinates.has_key(coordinatesKey):
@@ -168,21 +163,16 @@ class Hive:
     if len(coordinatesList) == 0:
       coordinatesList.append((0, 0, 0))
 
-    logging.debug('Hive.getEntryCoordinatesList(' + color + '): coordinatesList=' + str(coordinatesList))
-
     return coordinatesList; 
 
 
   def isBrokenWithoutPiece(self, piece):
     if len(self.board) == 0:
-      logging.debug('Hive.isBrokenWithoutPiece: no pieces played')
       return False
   
     visitedPieces = dict()
 
     self.pickupPiece(piece)
-
-    logging.debug('Hive.isBrokenWithoutPiece: start state, board = ' + str(self.board))
 
     # get a random piece
     key = self.board.keys()[0]
@@ -224,8 +214,6 @@ class Hive:
 
   
   def getRelativeCoordinates(self, piece, relativePiece, relativePosition):
-    logging.debug('Hive.getRelativeCoordinates: piece=' + str(piece))
-
     newCoordinates = (0,0,0)
     if relativePiece:
       logging.debug('Hive.getRelativeCoordinates: relativePiece=' + str(relativePiece))
