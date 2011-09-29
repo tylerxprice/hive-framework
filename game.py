@@ -9,12 +9,12 @@ from hive import *
 class Game:
   (WINNER_WHITE, WINNER_BLACK, WINNER_DRAW, WINNER_NONE) = (1, -1, 0, None)
 
-  def __init__(self, whiteBot, blackBot, timeControls, moveList):
-    self.whitePlayer = Player('white', whiteBot)
-    self.blackPlayer = Player('black', blackBot)
+  def __init__(self, whiteBot, blackBot, timeControls, moveList, expansions):
+    self.whitePlayer = Player('white', whiteBot, expansions)
+    self.blackPlayer = Player('black', blackBot, expansions)
     self.currentPlayer = self.whitePlayer
     self.turnNumber = 1
-    self.hive = Hive()
+    self.hive = Hive(expansions)
 
     self.gameTime = 300000 #ms
     self._readTimeControls(timeControls)
@@ -186,13 +186,13 @@ class Game:
 
   def validateMoveString(self, moveString):
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
-    match = re.match('^[bw]?[ABGQS][0-3]?(?:\\s[\\\/-]?[bw][ABGQS][0-3]?[\\\/-]?)?$', moveString)
+    match = re.match('^[bw]?[ABGLMQS][0-3]?(?:\\s[\\\/-]?[bw][ABGLMQS][0-3]?[\\\/-]?)?$', moveString)
     if not match:
       raise InputError("The move you entered is not valid.")
 
 
   def parsePieceAttributes(self, moveString, currentColor):
-    matches = re.search('^(?P<color>b|w)?(?P<kind>[ABGQS])(?P<number>[0-3]?)', moveString)
+    matches = re.search('^(?P<color>b|w)?(?P<kind>[ABGLMQS])(?P<number>[0-3]?)', moveString)
     color = matches.group('color')
     if not color:
       color = currentColor
@@ -200,7 +200,7 @@ class Game:
 
 
   def parseRelativeAttributes(self, moveString):
-    matches = re.search(' (?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGQS])(?P<number>[0-3]?)(?P<rm>[\\\/-]?)$', moveString)
+    matches = re.search(' (?P<lm>[\\\/-]?)(?P<color>b|w)(?P<kind>[ABGLMQS])(?P<number>[0-3]?)(?P<rm>[\\\/-]?)$', moveString)
     if matches:
       position = (matches.group('lm') if matches.group('lm') != '' else ' ') + (matches.group('rm') if matches.group('rm') != '' else ' ')
       return ((matches.group('color'), matches.group('kind'), matches.group('number')), position)

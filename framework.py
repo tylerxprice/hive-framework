@@ -9,7 +9,7 @@ from cmd2 import Cmd
 from errors import *
 from game import *
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -17,10 +17,11 @@ class Framework():
 
   def _parseArgs(self, args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--white')
+    parser.add_argument('--white') 
     parser.add_argument('--black')
-    parser.add_argument('--times', default='30000,0,0')
-    parser.add_argument('--moves', default='')
+    parser.add_argument('--times', default='30000,0,0') # game time, white used, black used (ms)
+    parser.add_argument('--moves', default='') # 1. wS1, 2. bG1 -wS1, 3. wQ wS1/, ...
+    parser.add_argument('--expansions', default='') # LM
     args = parser.parse_args(args.split())
     args = vars(args)
     logging.debug('Framework._parseArgs: args = ' + str(args))
@@ -29,7 +30,7 @@ class Framework():
   def run(self):
     self.args['white'] = self.readBot('white', self.args['white'])
     self.args['black'] = self.readBot('black', self.args['black'])
-    self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'])
+    self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'], self.args['expansions'])
 
     while not self.game.isGameOver():
       moveString = self.readMove()
@@ -46,6 +47,14 @@ class Framework():
         if self.game.currentPlayer.bot: break;
       else:
         self.game.printBoard()
+        
+    winner = self.game.getWinner()
+    if winner == Game.WINNER_WHITE:
+      sys.stdout.write('White wins!\n')
+    elif winner == Game.WINNER_BLACK:
+      sys.stdout.write('Black wins!\n')
+    elif winner == Game.WINNER_DRAW:
+      sys.stdout.write('It\'s a draw!\n')
 
 
   def readBot(self, color, bot=''):

@@ -4,8 +4,8 @@ import random
 class Zobrist:
   """ This is a modification of Zobrist keys: they are lazily generated into a dictionary since the number of different hexes a piece can land throughout the game on is indeterminate. """
 
-  def __init__(self):
-    self.zobristKeys = [[dict() for y in range(5)] for x in range(2)]
+  def __init__(self, numberOfPieces):
+    self.zobristKeys = [[dict() for y in range(numberOfPieces)] for x in range(2)]
     self.sideKey = self._generateRandomNumber()
     self.currentState = 0L
 

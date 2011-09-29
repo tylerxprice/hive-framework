@@ -59,9 +59,9 @@ class Hive:
   # relative movement directives (not connectivity)
   (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
 
-  def __init__(self):
+  def __init__(self, expansions):
     self.board = dict()
-    self.zobrist = Zobrist()
+    self.zobrist = Zobrist(5 + len(expansions))
 
 
   def getBoardKey(self, coordinates):

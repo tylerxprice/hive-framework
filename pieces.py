@@ -1,7 +1,7 @@
 import logging
 
 class Piece:
-  (COLORSTRING, KINDSTRING) = ('wb', 'ABGQS')
+  (COLORSTRING, KINDSTRING) = ('wb', 'ABGQSML')
 
   def __init__(self, color, kind, number):
     self.color = color # w, b
@@ -45,8 +45,8 @@ class QueenBeePiece(Piece):
   """
     The Queen Bee piece. It moves one hex at a time and cannot be surrounded or the player looses.
   """
-  def __init__(self, color):
-    Piece.__init__(self, color, 'Q', '')
+  def __init__(self, color, number = ''):
+    Piece.__init__(self, color, 'Q', number)
 
 
   def getPossibleCoordinatesList(self, hive):
@@ -274,3 +274,68 @@ class GrasshopperPiece(Piece):
           break
 
     return possibleCoordinatesList
+
+
+  
+class LadybugPiece(Piece):
+  """
+    The Ladybug piece. It moves 2 hexes ontop of the hive and then one hex to get off the hive.
+  """
+  def __init__(self, color, number = ''):
+    Piece.__init__(self, color, 'L', number)
+
+
+  def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
+    possibleCoordinatesList = []
+
+    hive.pickupPiece(self)
+    self._visitCoordinate(self.coordinates, 0, [], possibleCoordinatesList, hive)
+    hive.putdownPiece(self, self.coordinates)
+
+    return possibleCoordinatesList
+
+
+  def _visitCoordinate(self, coordinates, depth, currentPath, possibleCoordinatesList, hive):
+    if depth == 3:
+      if not coordinates in possibleCoordinatesList:
+        possibleCoordinatesList.append(coordinates)
+        return
+
+    currentPath.append(coordinates)
+
+    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
+    for adjacentCoordinates in adjacentCoordinatesList:
+      if depth in (0, 1) and hive.getTopPieceAtCoordinates(adjacentCoordinates):
+        self._visitCoordinates(adjacentCoordinates, depth - 1, currentPath, possibleCoordinatesList, hive)
+      if depth == 2 and not hive.getTopPieceAtCoordinates(adjacentCoordiantes):
+        self._visitCoordinates(adjacentCoordinates, depth - 1, currentPath, possibleCoordinatesList, hive)
+
+
+class MosquitoPiece(QueenBeePiece, SpiderPiece, BeetlePiece, AntPiece, GrasshopperPiece, LadybugPiece, Piece):
+  """
+    The Mosquito piece. It moves like any of the piece types that it is adjacent to (unless it is beetling on top of the hive)
+  """
+  def __init__(self, color, number = ''):
+    Piece.__init__(self, color, 'M', number)
+
+
+  def getPossibleCoordinatesList(self, hive):
+    possibleCoordinatesList = Piece.getPossibleCoordinatesList(self, hive)
+    if not possibleCoordinatesList == None:
+      return possibleCoordinatesList
+
+    possibleCoordinatesList = []
+
+    adjacentCoordinatesList = hive.getAdjacentCoordinatesList(coordinates)
+    for adjacentCoordinates in adjacentCoordinatesList:
+      piece = hive.getTopPieceAtCoordinates(adjacentCoordinates)
+      if piece:
+        kindPossibleCoordinatesList = piece.__class__.getPossibleCoordinatesList(self, hive)
+        possibleCoordinatesList = possibleCoordinatesList + filter(lambda x:x not in possibleCoordinatesList, kindPossibleCoordinatesList)
+
+    return possibleCoordinatesList
+
