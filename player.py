@@ -1,6 +1,8 @@
 from pieces import *
 
 class Player:
+  (WHITE, BLACK) = ('white', 'black')
+
   def __init__(self, color, bot, expansions):
     self.bot = bot
     self.color = color

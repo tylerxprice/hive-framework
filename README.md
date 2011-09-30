@@ -7,11 +7,21 @@ This is framework for running a game of Hive between two bots.
 Requires:
 
  * Python 2.7
- * cmd2 egg
 
 To run the framework:
 
-shell> python framework.py
+shell> python framework.py [-h] [--white WHITE] [--black BLACK] [--times TIMES] [--moves MOVES] [--expansions EXPANSIONS]
+optional arguments:
+  -h, --help                show this help message and exit
+  --white WHITE             The file name of the bot to play white
+  --black BLACK             The file name of the bot to play black
+  --times TIMES             Game Time (ms),White Time Used (ms),Black Time Used(ms)
+  --moves MOVES             List of moves in the boardspace.net move notation (e.g., "1. wA1, 2. bG1 -wA1")
+  --expansions EXPANSIONS   String of expansions pieces (e.g., "LM" or "L" or "M")
+
+## Bots
+
+The bots that use this framework to run should accept all the same times, moves, and expansions arguments as the framework does.
 
 
 ## Authors

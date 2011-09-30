@@ -10,8 +10,8 @@ class Game:
   (WINNER_WHITE, WINNER_BLACK, WINNER_DRAW, WINNER_NONE) = (1, -1, 0, None)
 
   def __init__(self, whiteBot, blackBot, timeControls, moveList, expansions):
-    self.whitePlayer = Player('white', whiteBot, expansions)
-    self.blackPlayer = Player('black', blackBot, expansions)
+    self.whitePlayer = Player(Player.WHITE, whiteBot, expansions)
+    self.blackPlayer = Player(Player.BLACK, blackBot, expansions)
     self.currentPlayer = self.whitePlayer
     self.turnNumber = 1
     self.hive = Hive(expansions)
