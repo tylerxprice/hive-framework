@@ -1,0 +1,33 @@
+timestamp: 2011-09-30_14:01
+white=DinoDi
+black=Dumbot
+times=-1,0,0
+moves=""
+expansions=""
+
+ 1. S1		G1 /wS1
+ 3. Q \wS1	Q /bG1
+ 5. A1 \wQ	S1 /bQ
+ 7. A2 wQ/	B1 bQ-
+ 9. G1 wS1/	B2 bS1-
+11. G1 /bS1	B1 bG1-
+13. B1 wS1/	G2 bB2-
+15. A3 -wG1	G3 bG2/
+17. A1 bG2\	S2 -bG1
+19. G2 wA1\	A1 bG3/
+21. G2 bB2/	S2 -wA2
+23. A3 bA1-	Q -bG1
+25. G3 wA3-	A2 \bS2
+27. A2 \bA2	A3 /bA2
+29. A1 -bA3	G2 bQ/
+31. G3 -bQ	G1 bA3\
+33. B1 wQ	G1 wA1/
+35. A2 bA2/	A3 wS1/
+37. A1 bA3/	G1 bS2/
+39. A2 \bA2	G1 /bS2
+41. B1 bG2	G3 bS1/
+43. G1 bG3/	G3 wG3/
+45. B1 bQ	G3 bB1/
+47. B1 bS1/	G3 wQ/
+
+winner=black
