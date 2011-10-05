@@ -1,4 +1,5 @@
 import argparse
+
 import logging
 import os
 import shlex
@@ -63,6 +64,10 @@ class Framework():
         bot = raw_input(color.capitalize() + " player bot (blank for human): ")
       else:
         sys.stdout.write(color.capitalize() + " player bot (blank for human): " + bot + "\n")
+
+      # tack on .exe if Windows
+      if os.name == 'nt' and not bot == '' and bot.rfind('.') < 0:
+        bot += '.exe'
 
       if bot == '':
         return None

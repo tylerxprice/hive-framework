@@ -9,5 +9,5 @@ sys.argv.append('-q')
 setup(
   options = {'py2exe': {'bundle_files': 1}},
   zipfile = None,
-  console = [{'script': 'framework.py'}]
+  console = [{'script': 'randy.py'}]
 )
