@@ -228,7 +228,7 @@ class Game:
 
 
   def getMoveListCsv(self):
-    return ', '.join(map(str, self.moveList))
+    return ', '.join(map(str, self.moveList)) + ', '
 
 
   def _readTimeControls(self, timeControlsCsv):
