@@ -8,7 +8,7 @@ from time import time
 from errors import *
 from game import *
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
