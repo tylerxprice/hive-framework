@@ -1,11 +1,15 @@
 from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views.generic.simple import direct_to_template
+
 
 from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
+  ('^about/$', direct_to_template, {'template': 'about.html'}),
+  ('^participate/$', direct_to_template, {'template': 'participate.html'}),
   (r'^tournaments/', include('tournaments.urls')),
   url(r'^admin/', include(admin.site.urls)),
 )
