@@ -4,9 +4,9 @@ from django.db import models
 
 class Bot(models.Model):
   name = models.CharField(max_length=100)
-  wins = models.IntegerField()
-  losses = models.IntegerField()
-  draws = models.IntegerField()
+  wins = models.IntegerField(default=0)
+  losses = models.IntegerField(default=0)
+  draws = models.IntegerField(default=0)
 
   class Meta:
     ordering = ['name']
@@ -22,7 +22,7 @@ class Tournament(models.Model):
     (u'F', u'Finished'), 
   )
   date_played = models.DateTimeField(auto_now_add=True)
-  duration = models.IntegerField() 
+  duration = models.IntegerField(default=0.0) 
   status = models.CharField(max_length=2, choices=STATUS_CHOICES)
   bots = models.ManyToManyField(Bot, through='Participant')
 
@@ -47,29 +47,33 @@ class Tournament(models.Model):
   def get_participants(self):
     return Participant.objects.filter(tournament__id=self.id).order_by('bot__name')
 
-  def get_matrix(self):
-    bots = list(self.bots.order_by('name'))
-    matrix = [None for j in range(len(bots))]
-    for game in self.game_set.all():
-      y = bots.index(game.white)
-      x = bots.index(game.black)
-      if not matrix[y]:
-        matrix[y] = dict()
-        matrix[y]['bot'] = game.white
-        matrix[y]['games'] = [None for i in range(len(bots))]
-      matrix[y]['games'][x] = game
-    return matrix
-
 
 class Participant(models.Model):
   tournament = models.ForeignKey(Tournament)
   bot = models.ForeignKey(Bot)
-  wins = models.IntegerField()
-  losses = models.IntegerField()
-  draws = models.IntegerField()
+  wins = models.IntegerField(default=0)
+  losses = models.IntegerField(default=0)
+  draws = models.IntegerField(default=0)
+  number_of_moves = models.IntegerField(default=0)
+  time = models.FloatField(default=0.0)
+  errors = models.IntegerField(default=0)
+  
+  def get_average_time_per_move(self):
+    if self.number_of_moves == 0:
+      return 0.0
+    return round((self.time / self.number_of_moves), 1);
+  get_average_time_per_move.short_description = 'Time Per Move (Avg)'
+  
+  def get_winning_percentage(self):
+    games = self.wins + self.losses + self.ties
+    if games == 0:
+      return 0.0
+    return round((self.wins / games), 3);
+  get_winning_percentage.short_description = 'Winning Pct'
 
   def get_games_as_white(self):
     return self.tournament.game_set.filter(white__id=self.bot.id).order_by('black__name')
+
 
 class Game(models.Model):
   WINNER_CHOICES = (

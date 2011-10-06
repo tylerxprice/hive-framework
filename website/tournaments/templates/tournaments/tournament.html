@@ -5,8 +5,8 @@
 {% block title %}{{ tournament.get_name }} Results | Hive Bot Tournament{% endblock title %}
 
 {% block content %}
-
 <h1>{{ tournament.get_name }} Results</h1>
+
 
 <h2>Games</h2>
 
@@ -14,14 +14,14 @@
   <tr>
     <td></td>
     <td></td>
-    {% for i in tournament.number_of_bots|get_range %}
+    {% for i in number_of_bots|get_range %}
       <td>{{ i|get_chr }}</td>
     {% endfor %}
   </tr>
 
-  {% for row in tournament.get_matrix %}
+  {% for row in result_matrix %}
     <tr>
-      <td>{{ row.bot.name }}</td>
+      <td>{{ row.bot_name }}</td>
       <td>{{ forloop.counter0|get_chr }}</td>
       {% for game in row.games %}
         <td><a href="{{ game.result_file.url }}">{{ game.winner }}</a></td>
@@ -29,6 +29,7 @@
     </tr>
   {% endfor %}
 </table>
+
 
 <h2>Rankings</h2>
 
