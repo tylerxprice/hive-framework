@@ -14,31 +14,47 @@
 /* SITE */
   Standards: HTML5, CSS3
   Components: Modernizr, jQuery
-  Software: Django, Sqlite3
+  Software: Python 2.7, Django 1.3, Sqlite3
   
-
-                                    
-                               -o/-                       
-                               +oo//-                     
-                              :ooo+//:                    
-                             -ooooo///-                   
-                             /oooooo//:                   
-                            :ooooooo+//-                  
-                           -+oooooooo///-                 
-           -://////////////+oooooooooo++////////////::    
-            :+ooooooooooooooooooooooooooooooooooooo+:::-  
-              -/+ooooooooooooooooooooooooooooooo+/::////:-
-                -:+oooooooooooooooooooooooooooo/::///////:-
-                  --/+ooooooooooooooooooooo+::://////:-   
-                     -:+ooooooooooooooooo+:://////:--     
-                       /ooooooooooooooooo+//////:-        
-                      -ooooooooooooooooooo////-           
-                      /ooooooooo+oooooooooo//:            
-                     :ooooooo+/::/+oooooooo+//-           
-                    -oooooo/::///////+oooooo///-          
-                    /ooo+::://////:---:/+oooo//:          
-                   -o+/::///////:-      -:/+o+//-         
-                   :-:///////:-            -:/://         
-                     -////:-                 --//:        
-                       --                       -:        
+                                                                           
+                                  ./ydy/.                                  
+                               -+hNMMMMMNdo:`                              
+                           .:ydMMMMMMMMMMMMMdy:.                           
+                        -+hmMMMMMMMMMMMMMMMMMMMNh+-                        
+                     /sdMMMMMMMMMMMMMMMMMMMMMMMMMMMdy/`                    
+                 .ohNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNho-                 
+              /sNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNs/`             
+          -ohMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMho-`         
+      ./smNMMMMMMMMMMMMMMMMMMMMMsmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNms/.      
+   -+hNMMMMMMMMMMMMMMMMMMMMMMMMM/:dMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNho-   
+   hNMMMMMMMMMMMMMMMMMMMMMMMMMMNhsomMMMMMMMMMMmhNMMMMMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMMMMMMMNMosmMMMMMMMMs+mMMMMMMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMmhNNMMMMMMMMMMMMMMMMMMM+yMMMMMMNo:NMMMMMMMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMmyhNdhyohmNMMMMMMMMMMMMMMssmMMMMN+-MMMMMMMMMMMMMMMMMMMMMMMMMMh   
+   hMMMMNdmMMMMMMMds+/+sdNMMMMMMMMMh+hMMMNs+MMMMMMMMMMNmddddmmMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMmho+/:mMMMMMMm/oMMMh-MMMMMMMMmyyhmMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMNh-sMMMMMM+oMMd:sMMMMdy++yNMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMMMm/:dMMMM+/mmo-NMMm+./hmNMMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMMMMMy-omMm/`--``/+o.:+//+++smMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMNdddmNMm/-/-          ./hNMMms/+ydNMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMNmmmdso/:/+/+/+yo.            -hNMMMMNms://ydmMMMMMMMMh   
+   hMMMMMMMMMMm++oyyydmNMMMMMMdys:`             `hMMMMMMMMmy:..hNMMMMMMh   
+   hMMMMMMMMMdsNMMMMMMMMMMMMMMMh+/:.             oNMMMMMMMMMMMhsmMMMMMMh   
+   hMMMMMMMMNmMMMMMMMMMMMMMMMMm.hNhho.           sNMMMMMMMMMMMNomMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMMMMd.mMMNshd+`        `hMMMMMMMMMMMMM+dMMMMMMh   
+   hNMMMMMMMMMMMMMMMMMMMMMMNs.NMMMM++mMNh/-`   -hNMMMMMMMMMMMMModMMMMMMh   
+   hNMMMMMMMMMMMMMMMMMMMMMNy:mMMMMMd:oMMMMNmmmmNMMMMMMMMMMMMMMMNMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMNyNMMMMMMMsodMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMh   
+   hMMMMMMMMMMMMMMMMMMMMMMNNMMMMMMMMMyyMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMh   
+   :ymNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNhhMMMMMMMMMMMMMMMMMMMMMMMMMMMMNmy:   
+     `:odNMMMMMMMMMMMMMMMMMMMMMMMMMMMMNddMMMMMMMMMMMMMMMMMMMMMMMMNds:`     
+         ./yNMMMMMMMMMMMMMMMMMMMMMMMMMMNdNMMMMMMMMMMMMMMMMMMMMNy+.         
+             .odMMMMMMMMMMMMMMMMMMMMMMMMNmMMMMMMMMMMMMMMMMMmo-             
+                `+ymMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNy+`                
+                   `-odNMMMMMMMMMMMMMMMMMMMMMMMMMMMNdo:`                   
+                      `./ydMMMMMMMMMMMMMMMMMMMMMmy/.`                      
+                          `:odNMMMMMMMMMMMMMNds:`                          
+                              -:hmNMMMMMMmh/-                              
+                                 `:odmds:`                       
+              
 
