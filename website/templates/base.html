@@ -7,40 +7,58 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <title>{% block title %}Hive Bot Tournament {% endblock title %}</title>
+  <title>{% block title %}Hive Bot Tournament{% endblock title %}</title>
 	<meta name="description" content="Tournament results for head-to-head competitions between two Hive bots.">
 	<meta name="author" content="Tyler Price">
 
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 
 	<link rel="stylesheet" href="{{ STATIC_URL }}css/style.css">
+	<link rel="stylesheet" href="{{ STATIC_URL }}css/960.css">
 
 	<script src="{{ STATIC_URL }}js/libs/modernizr-2.0.6.min.js"></script>
 </head>
 <body>
 
-<div id="container">
-	<header>
-    <h1>Hive Bot Tournament</h1>
-    <nav>
+<div id="container" class="container_12">
+
+  <header class="clearfix">
+    <div class="grid_9 alpha">
+      <h1>Hive Bot Tournament</h1>
+    </div>
+    <div class="grid_3 omega">
+      <nav class="clearfix">
       <ul>
-        <li><a href="/tournaments">Results</a></li>
-        <li><a href="/about">About</a></li>
-        <li><a href="/participate">Participate</a></li>
-      </ul>
-    </nav>
+          <li><a href="/tournaments">Results</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/participate">Participate</a></li>
+        </ul>
+      </nav>
+    </div>
 	</header>
 
-	<div id="main" role="main">
-    <section id="content">
+  <hr>
+
+	<div id="main" role="main" class="clearfix">
+    <section class="grid_8 alpha">
       {% block content %}
       
       {% endblock content %}
     </section>
 
-    <section id="sidebar">
+    <section id="sidebar" class="grid_4 omega">
       {% block sidebar %}
-        <p>Some pretty filler stuff will go here.</p>
+      <nav>
+        <ul>
+          <li>
+            <a href="http://www.gen42.com/hive"><img src="{{ STATIC_URL }}images/hive-logo.png"></a>
+            <a href="http://www.gen42.com/hive">Visit the Official Hive Site</a>
+          </li>
+          <li><a href="http://www.boardspace.net/english/about_hive.html">Play Hive at Boardspace.net</a></li>
+          <li><a href="http://boardgamegeek.com/boardgame/2655/hive">Geek out on Hive at BGG</a></li>
+          <li><a href="https://github.com/tylerxprice/hive-framework">View tournament code on github</a></li>
+        </ul>
+      </nav>
       {% endblock sidebar %}
     </section>
 	</div>
@@ -60,12 +78,6 @@
 <script src="{{ STATIC_URL }}js/script.js"></script>
 <!-- end scripts-->
 
-<script>
-	var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']]; // Change UA-XXXXX-X to be your site's ID
-	(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
-	g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
-	s.parentNode.insertBefore(g,s)}(document,'script'));
-</script>
 
 <!--[if lt IE 7 ]>
 	<script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.2/CFInstall.min.js"></script>

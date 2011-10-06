@@ -41,8 +41,8 @@ body, button, input, select, textarea { font-family: sans-serif; color: #222; }
  * Also: hot pink!
  */
 
-::-moz-selection { background: #fe57a1; color: #fff; text-shadow: none; }
-::selection { background: #fe57a1; color: #fff; text-shadow: none; }
+::-moz-selection { background: #FAA71D; color: #fff; text-shadow: none; }
+::selection { background: #FAA71D; color: #fff; text-shadow: none; }
 
 
 /* =============================================================================
@@ -201,11 +201,95 @@ table { border-collapse: collapse; border-spacing: 0; }
    Author: 
    ========================================================================== */
 
+  header nav {
+    font-size: 15px;
+    margin-top: 28px;
+  }
+  header nav ul {
+    float: right;
+  }
+  header nav ul li {
+    float: left;
+    padding-right: 15px;
+  }
+  header nav ul li:last-child {
+    padding-right: 0;
+  }
 
 
+  #sidebar nav {
+    text-align: center;
+  }
+  #sidebar nav ul {
+    line-height:1.5em;
+  }
+  #sidebar nav ul img {
+    padding-left: 15px;
+    width:98%;
+  }
 
 
+  table {
+    width:100%;
+  }
+  th {
+    background-color:#CCC;
+    text-align: left;
+  }
+  tr:nth-child(odd) {
+    background-color: #EEE;
+  }
+  tr {
+    background-color: #fff;
+    border-bottom: solid 1px #000;
+  }
+  tr:first-child {
+    border-top: solid 1px #000;
+  }
+  th, td {
+    border-right: solid 1px #000;
+  }
+  th:first-child, td:first-child {
+    border-left: solid 1px #000;
+  }
+  th, td {
+    padding: 4px;
+  }
 
+  .matrix {
+    margin: 0 auto;
+    width: auto;
+  }
+  .matrix tr {
+    background-color: #fff;
+    border-top: 0;
+  }
+  .matrix td, .matrix th {
+    min-width:15px;
+    text-align: center;
+  }
+  .matrix th:first-child {
+    text-align:left;
+  }
+
+  .matrix .w,
+  .matrix .w a,
+  .matrix .w a:visited {
+    background-color:#fff;
+    color:#000;
+  }
+  .matrix .b,
+  .matrix .b a,
+  .matrix .b a:visited {
+    background-color:#000;
+    color:#fff;
+  }
+  .matrix .d,
+  .matrix .d a,
+  .matrix .d a:visited {
+    background-color:#EEE;
+    color:#666;
+  }
 
 
 /* =============================================================================

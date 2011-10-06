@@ -10,21 +10,25 @@
 
 <h2>Games</h2>
 
-<table>
+<table class="matrix">
   <tr>
-    <td></td>
+    <td style="border:0"></td>
     <td></td>
     {% for i in number_of_bots|get_range %}
-      <td>{{ i|get_chr }}</td>
+      <th class="b">{{ i|get_chr }}</th>
     {% endfor %}
   </tr>
 
   {% for row in result_matrix %}
     <tr>
-      <td>{{ row.bot_name }}</td>
-      <td>{{ forloop.counter0|get_chr }}</td>
+      <th>{{ row.bot_name }}</th>
+      <th class="w">{{ forloop.counter0|get_chr }}</th>
       {% for game in row.games %}
-        <td><a href="{{ game.result_file.url }}">{{ game.winner }}</a></td>
+        {% ifnotequal game None %}
+          <td class="{{ game.winner }}"><a href="{{ game.result_file.url }}">{{ game.winner }}</a></td>
+        {% else %}
+          <td class="u"></td>
+        {% endifnotequal %}
       {% endfor %}
     </tr>
   {% endfor %}
