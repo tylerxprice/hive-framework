@@ -1,12 +1,55 @@
-<h1>{{ poll.question }}</h1>
+{% extends "base.html" %}
+{% load get_range %}
+{% load get_chr %}
 
-{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+{% block title %}{{ tournament.get_name }} Results | Hive Bot Tournament{% endblock title %}
 
-<form action="/polls/{{ poll.id }}/vote/" method="post">
-  {% csrf_token %}
-  {% for choice in poll.choice_set.all %}
-    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
-    <label for="choice{{ forloop.counter }}">{{ choice.choice }}</label><br />
-{% endfor %}
-  <input type="submit" value="Vote" />
-</form>
+{% block content %}
+
+<h1>{{ tournament.get_name }} Results</h1>
+
+<h2>Games</h2>
+
+<table>
+  <tr>
+    <td></td>
+    <td></td>
+    {% for i in tournament.number_of_bots|get_range %}
+      <td>{{ i|get_chr }}</td>
+    {% endfor %}
+  </tr>
+
+  {% for row in tournament.get_matrix %}
+    <tr>
+      <td>{{ row.bot.name }}</td>
+      <td>{{ forloop.counter0|get_chr }}</td>
+      {% for game in row.games %}
+        <td><a href="{{ game.result_file.url }}">{{ game.winner }}</a></td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+</table>
+
+<h2>Rankings</h2>
+
+<table>
+  <thead>
+    <th>Bot</th>
+    <th>Wins</th>
+    <th>Loses</th>
+    <th>Draws</th>
+  </thead>
+  <tbody>
+    {% for participant in tournament.get_participants %}
+      <tr>
+        <td>{{ participant.bot.name }}</td>
+        <td>{{ participant.wins }}</td>
+        <td>{{ participant.losses }}</td>
+        <td>{{ participant.draws }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock content %}
+

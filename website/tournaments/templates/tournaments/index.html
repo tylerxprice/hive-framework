@@ -4,11 +4,13 @@
 
 {% block content %}
 
+<h1>Results</h1>
+
   {% if tournaments %}
   <table>
     <thead>
       <tr>
-        <th>Date Played</th>
+        <th>Name</th>
         <th>Duration</th>
         <th># Bots</th>
         <th>Status</th>
@@ -17,7 +19,7 @@
     <tbody>
       {% for tournament in tournaments %}
       <tr>
-        <td><a href="/tournaments/{{ tournament.id }}/">{{ tournament.date_played }}</a></td>
+        <td><a href="/tournaments/{{ tournament.id }}/">{{ tournament.get_name }}</a></td>
         <td>{{ tournament.duration }}</td>
         <td>{{ tournament.number_of_bots }}</td>
         <td>{{ tournament.get_status_display }}</td>
