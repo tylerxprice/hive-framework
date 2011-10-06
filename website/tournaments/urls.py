@@ -9,10 +9,6 @@ urlpatterns = patterns('',
       context_object_name='tournaments',
       template_name='tournaments/index.html')),
   (r'^(?P<id>\d+)/$', 'tournaments.views.tournament'),
-  url(r'^game/(?P<pk>\d+)/$', 
-    DetailView.as_view(
-      model=Game,
-      template_name='tournaments/game.html'),
-    name='game_results'),
+  (r'^game/(?P<id>\d+)/$', 'tournaments.views.game'),
 )
 

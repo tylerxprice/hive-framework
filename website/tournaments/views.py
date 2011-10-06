@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
@@ -20,10 +20,14 @@ def tournament(request, id):
       matrix[y]['games'] = [None for i in range(len(bots))] # the None will stay in for the square against itself
     matrix[y]['games'][x] = game
 
-  return render_to_response('tournaments/tournament.html', {
+  return render(request, 'tournaments/tournament.html', {
     'tournament': tournament, 
     'result_matrix': matrix, 
     'number_of_bots': number_of_bots, 
     'participants': participants,
-  })
+    })
 
+
+def game(request, id):
+  game = get_object_or_404(Game, pk=id)
+  return rnder(request, 'tournaments/game.html', {'game': game})
