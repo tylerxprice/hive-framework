@@ -35,6 +35,28 @@
 </table>
 
 
+<table class="matrix legend">
+  <thead>
+    <caption>Legend</caption>
+  </thead>
+  <tbody>
+    <tr>
+      <th class="w">w</th><td>White player wins</td>
+      <th class="b">b</th><td>White player wins</td>
+      <th class="d">d</th><td>Drawn game</td>
+    </tr>
+    <tr>
+      <td colspan="6">
+        <ul>
+          <li>Click the game matrix square to see the results.</li>
+          <li>Wins are awarded if the opponent errors.</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
 <h2>Rankings</h2>
 
 <table>
@@ -43,6 +65,10 @@
     <th>Wins</th>
     <th>Loses</th>
     <th>Draws</th>
+    <th>Errors</th>
+    <th>Time</th>
+    <th>Moves (Avg)</th>
+    <th>Time/Move (Avg)</th>
   </thead>
   <tbody>
     {% for participant in tournament.get_participants %}
@@ -51,6 +77,10 @@
         <td>{{ participant.wins }}</td>
         <td>{{ participant.losses }}</td>
         <td>{{ participant.draws }}</td>
+        <td>{{ participant.errors }}</td>
+        <td>{{ participant.time }}</td>
+        <td>{{ participant.get_average_number_of_moves }}</td>
+        <td>{{ participant.get_average_time_per_move }}</td>
       </tr>
     {% endfor %}
   </tbody>

@@ -3,6 +3,30 @@
 {% block title %}Participate | Hive Bot Tournament{% endblock title %}
 
 {% block content %}
-<p>The participation info page.</p>
+
+<h1>Participate</h1>
+
+<p>The Hive Bot Tournament is currently open to everyone. Available computing power may limit the number of entrants in the future, but if you are interested in building a bot read on.</p>
+
+<h2>Getting Started</h2>
+
+<p>If you are not already familiar with Hive you can read the <a href="http://www.gen42.com/downloads/rules/Hive_Rules.pdf">rules on the official site [PDF]</a> or jump right in and <a href="http://www.boardspace.net/english/about_hive.html">play online BoardSpace.net</a>.</p>
+
+<p>All the code that runs the hive games including scheduling matchups, validing moves, and checking for winners is open-source and available on <a href="https://github.com/tylerxprice/hive-framework">the github repository</a>. The Python script "framework.py" can be used to play a game of hive in three combinations: human versus human, human versus bot, or bot versus bot. Also a sample bot "randy.py" is also provided in the repo. This bot only searches one move ahead and gives a random score to the board position.</p>
+
+<p>Note: the framework is still in development, however the core functionality is in place.</p>
+
+
+<h2>Building Your Bot</h2>
+
+<p>Even though the framework is programmed in Python, this should in no way limit what language you use. The framework will invoke your bot as a subprocess passing the game state through the command line and reading the move from the output. Currently bots are being worked on in Python, Ruby, and C.</p>
+
+<p>The specification for the bots is maintained on the <a href="https://github.com/tylerxprice/hive-framework/wiki/Bot-Specification">github wiki page</a>.</p>
+
+
+<h2>Submitting Your Bot</h2>
+
+<p>Currently there is no way to submit your bot and have it automatically show up in the tournament. You can <a href="tylerxprice@gmail.com">e-mail me</a> your source code and build files in an compressed archive along with any notes for specific versions or extensions needed to build it. I will then manually add the bot to the tournament.</p>
+
 {% endblock content %}
 

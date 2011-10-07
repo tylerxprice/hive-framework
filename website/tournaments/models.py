@@ -58,6 +58,13 @@ class Participant(models.Model):
   time = models.FloatField(default=0.0)
   errors = models.IntegerField(default=0)
   
+  def get_average_number_of_moves(self):
+    games = self.wins + self.losses + self.draws
+    if games == 0:
+      return 0.0
+    return round((self.moves / games), 1);
+  get_average_number_of_moves.short_description = 'Moves (Avg)'
+
   def get_average_time_per_move(self):
     if self.number_of_moves == 0:
       return 0.0
@@ -65,7 +72,7 @@ class Participant(models.Model):
   get_average_time_per_move.short_description = 'Time Per Move (Avg)'
   
   def get_winning_percentage(self):
-    games = self.wins + self.losses + self.ties
+    games = self.wins + self.losses + self.draws
     if games == 0:
       return 0.0
     return round((self.wins / games), 3);

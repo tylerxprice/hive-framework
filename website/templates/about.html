@@ -3,6 +3,21 @@
 {% block title %}About | Hive Bot Tournament{% endblock title %}
 
 {% block content %}
-<p>The about page</p>
+<h1>About</h1>
+
+<p>The Hive Bot Tournament pits bots head-to-head against each other in a round-robin format. The bots must implement various game-playing AI techniques and cleverly encode an heurstic evaluation of the game if they are to make make winning moves.</p>
+
+<p>The tournament started as a friendly coding challenge and a fun side project for learning new languages and technologies. All the source code for the tournament framework, a sample bot, and this website is available on <a href="https://github.com/tylerxprice/hive-framework">the github repository</a> -- the player bots are closed source.</p>
+
+<h2>What is Hive?</h2>
+
+<p>Hive is a two-person abstract strategy game that is only about 10 years old. Each player controls a set of bugs in their color in an effort to completely surround the opposing queen bee. Among the unique challenges in Hive are the undefined "board" size that grows and moves as bugs are played, the supply of bugs that need to be timely added to the hive, and the varying movement patterns of each of the bug types.</p>
+
+<p>The <a href="http://www.gen42.com/downloads/rules/Hive_Rules.pdf">complete rule set [PDF]</a> can be downloaded from the <a href="http://www.gen42.com/hive">official Hive website</a>. Further discussion of Hive is available on <a href="http://boardgamegeek.com/boardgame/2655/hive">BoardGameGeek.com</a>. Two expansion pieces have been added to Hive since its release, and although it is a goal for the framework to support those pieces, the tournament will focus only on the base game for now.</p>
+
+<h2>Status and Roadmap</h2>
+
+<p>Development on the framework is on-going. The round-robin scheduler and results reviewer are the next components to be built.</p>
+
 {% endblock content %}
 
