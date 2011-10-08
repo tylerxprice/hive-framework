@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math
 import os
 import shlex
 import subprocess
@@ -8,7 +9,7 @@ from time import time
 from errors import *
 from game import *
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -31,9 +32,12 @@ class Framework():
     self.args['white'] = self.readBot('white', self.args['white'])
     self.args['black'] = self.readBot('black', self.args['black'])
     self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'], self.args['expansions'])
+    results = {}
+    results['play_by_play'] = [] 
 
+    error = ''
     while not self.game.isGameOver():
-      moveString = self.readMove()
+      moveString, moveTime, errorOutput = self.readMove()
       if moveString == 'quit' or moveString == 'exit':
         break
       try:
@@ -41,14 +45,30 @@ class Framework():
         self.game.playMove(moveString)
       except InputError as e:
         sys.stderr.write(e.value + '\n')
-        if self.game.currentPlayer.bot: break;
+        if self.game.currentPlayer.bot: 
+          error = self.game.currentPlayer.color
+          break;
       except MoveError as e:
         sys.stderr.write(e.value + '\n')
-        if self.game.currentPlayer.bot: break;
+        if self.game.currentPlayer.bot: 
+          error = self.game.currentPlayer.color
+          break;
       else:
-        self.game.printBoard()
-        
-    winner = self.game.getWinner()
+        if not self.game.whitePlayer.bot or not self.game.blackPlayer.bot:
+          self.game.printBoard()
+
+      results['play_by_play'].append({
+        'move_number': self.game.turnNumber - 1,
+        'move_string': moveString,
+        'move_time': moveTime,
+        'error_output': errorOutput,
+      })
+
+    if error:
+      winner = Game.WINNER_WHITE if error == Player.BLACK else Game.WINNER_BLACK
+    else:
+      winner = self.game.getWinner()
+
     if winner == Game.WINNER_WHITE:
       sys.stdout.write('White wins!\n')
     elif winner == Game.WINNER_BLACK:
@@ -56,6 +76,55 @@ class Framework():
     elif winner == Game.WINNER_DRAW:
       sys.stdout.write('It\'s a draw!\n')
 
+    results['args'] = {} 
+    results['args']['times'] = self.game.getTimeControlsCsv() 
+    results['args']['moves'] = self.game.getMoveListCsv() 
+    results['args']['expansions'] = self.args['expansions'] 
+    results['white'] = {} 
+    results['white']['wins'] = 1 if winner == Game.WINNER_WHITE else 0
+    results['white']['loses'] = 1 if winner == Game.WINNER_BLACK else 0
+    results['white']['draws'] = 1 if winner == Game.WINNER_DRAW else 0
+    results['white']['errors'] = 1 if error == Player.WHITE else 0
+    results['white']['number_of_moves'] = int(math.ceil(float(self.game.turnNumber - 1) / 2)) 
+    results['white']['time'] = self.game.whitePlayer.timeUsed
+    results['black'] = {} 
+    results['black']['wins'] = 1 if winner == Game.WINNER_BLACK else 0
+    results['black']['loses'] = 1 if winner == Game.WINNER_WHITE else 0
+    results['black']['draws'] = 1 if winner == Game.WINNER_DRAW else 0
+    results['black']['errors'] = 1 if error == Player.BLACK else 0
+    results['black']['number_of_moves'] = int(math.floor(float(self.game.turnNumber - 1) / 2)) 
+    results['black']['time'] = self.game.blackPlayer.timeUsed
+
+    return results
+
+  def norun(self):
+    self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'], self.args['expansions'])
+    results = {}
+    results['play_by_play'] = [] 
+
+    winner = Game.WINNER_DRAW
+    error = 0
+
+    results['args'] = {} 
+    results['args']['times'] = self.game.getTimeControlsCsv() 
+    results['args']['moves'] = self.game.getMoveListCsv() 
+    results['args']['expansions'] = self.args['expansions'] 
+    results['white'] = {} 
+    results['white']['wins'] = 1 if winner == Game.WINNER_WHITE else 0
+    results['white']['loses'] = 1 if winner == Game.WINNER_BLACK else 0
+    results['white']['draws'] = 1 if winner == Game.WINNER_DRAW else 0
+    results['white']['errors'] = 1 if error == Player.WHITE else 0
+    results['white']['number_of_moves'] = int(math.ceil(float(self.game.turnNumber - 1) / 2)) 
+    results['white']['time'] = self.game.whitePlayer.timeUsed
+    results['black'] = {} 
+    results['black']['wins'] = 1 if winner == Game.WINNER_BLACK else 0
+    results['black']['loses'] = 1 if winner == Game.WINNER_WHITE else 0
+    results['black']['draws'] = 1 if winner == Game.WINNER_DRAW else 0
+    results['black']['errors'] = 1 if error == Player.BLACK else 0
+    results['black']['number_of_moves'] = int(math.floor(float(self.game.turnNumber - 1) / 2)) 
+    results['black']['time'] = self.game.blackPlayer.timeUsed
+
+    return results
 
   def readBot(self, color, bot=''):
     while True:
@@ -80,23 +149,19 @@ class Framework():
 
   def readMove(self): 
     moveString = 'error'
+    moveTime = 0.0
+    errorOutput = 0
+
     if self.game.currentPlayer.bot:
       try:
-        bot = self.game.currentPlayer.bot
-
-        # script bot hacks
-        if bot.endswith('.py'):
-          bot = 'python ' + bot
-
-        commandLine = bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
-        logging.debug('Framework.readMove: commandLine = ' + commandLine)
+        commandLine = self.game.currentPlayer.bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
         args = shlex.split(commandLine)
         startTime = time()
         botProcess = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
         moveString, errorOutput = botProcess.communicate()
         sys.stderr.write(errorOutput)
         endTime = time()
-        totalTime = round((endTime - startTime) * 100)
+        moveTime = round((endTime - startTime) * 100)
         self.game.currentPlayer.timeUsed += totalTime
       except OSError as details:
         logging.debug('Framework.readMove: OSError = ' + str(details))
@@ -104,8 +169,7 @@ class Framework():
     else:
       moveString = raw_input(self.game.currentPlayer.color.capitalize() + "'s turn: ")
 
-    return moveString
-
+    return (moveString, moveTime, errorOutput)
 
 
 if __name__ == "__main__": 

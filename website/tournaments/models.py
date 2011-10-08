@@ -3,6 +3,7 @@ import math
 from django.db import models
 
 class Bot(models.Model):
+  is_deleted = models.IntegerField(default=0)
   name = models.CharField(max_length=100)
   wins = models.IntegerField(default=0)
   losses = models.IntegerField(default=0)
@@ -14,6 +15,10 @@ class Bot(models.Model):
   def __unicode__(self):
     return self.name
 
+  def delete(self, *args, **kwargs):
+    self.is_deleted = 1
+    self.save()
+
 
 class Tournament(models.Model):
   STATUS_CHOICES = (
@@ -21,6 +26,7 @@ class Tournament(models.Model):
     (u'IP', u'In Progress'),
     (u'F', u'Finished'), 
   )
+  is_deleted = models.IntegerField(default=0)
   date_played = models.DateTimeField(auto_now_add=True)
   duration = models.IntegerField(default=0.0) 
   status = models.CharField(max_length=2, choices=STATUS_CHOICES)
@@ -46,6 +52,10 @@ class Tournament(models.Model):
 
   def get_participants(self):
     return Participant.objects.filter(tournament__id=self.id).order_by('bot__name')
+
+  def delete(self, *args, **kwargs):
+    self.is_deleted = 1
+    self.save()
 
 
 class Participant(models.Model):
@@ -89,6 +99,9 @@ class Game(models.Model):
     (u'd', u'draw'),
   )
   tournament = models.ForeignKey(Tournament)
+  date_played = models.DateTimeField(auto_now_add=True)
+  duration = models.FloatField(default=0.0)
+  number_of_moves = models.IntegerField(default=0)
   result_file = models.FileField(
       upload_to=lambda game,filename: 'tournaments/results/%s/%s_vs_%s.txt' % (game.tournament.get_name(), game.white.name, game.black.name))
   white = models.ForeignKey(Bot, related_name='games_as_white')
@@ -97,11 +110,4 @@ class Game(models.Model):
 
   def __unicode__(self):
     return self.white.name + ' v. ' + self.black.name
-
-  def get_score(self):
-    if self.winner == Game.WINNER_CHOICES[0]:
-      return '1 - 0'
-    if self.winner == Game.WINNER_CHOICES[1]:
-      return '0- 1'
-    return '1/2 - 1/2'
 
