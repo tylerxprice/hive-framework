@@ -5,9 +5,6 @@ from django.db import models
 class Bot(models.Model):
   is_deleted = models.IntegerField(default=0)
   name = models.CharField(max_length=100)
-  wins = models.IntegerField(default=0)
-  losses = models.IntegerField(default=0)
-  draws = models.IntegerField(default=0)
 
   class Meta:
     ordering = ['name']
@@ -53,6 +50,12 @@ class Tournament(models.Model):
   def get_participants(self):
     return Participant.objects.filter(tournament__id=self.id).order_by('bot__name')
 
+  def get_winner_name(self):
+    winner_set = Participant.objects.filter(tournament__id=self.id).order_by('-wins')[:1]
+    if len(winner_set) > 0 and winner_set[0].wins > 0:
+      return winner_set[0].bot.name
+    return 'n/a'
+
   def delete(self, *args, **kwargs):
     self.is_deleted = 1
     self.save()
@@ -72,7 +75,7 @@ class Participant(models.Model):
     games = self.wins + self.losses + self.draws
     if games == 0:
       return 0.0
-    return round((self.moves / games), 1);
+    return round((self.number_of_moves / games), 1);
   get_average_number_of_moves.short_description = 'Moves (Avg)'
 
   def get_average_time_per_move(self):

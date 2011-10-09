@@ -39,7 +39,6 @@ class Scheduler(object):
     args = vars(args)
     return args
 
-  @transaction.commit_manually
   def run(self):
 
     try:
@@ -132,9 +131,6 @@ class Scheduler(object):
       tournament.save()
     except:
       print "Unexpected error:", sys.exc_info()
-      transaction.rollback()
-    else:
-      transaction.rollback()
 
 
 if __name__ == "__main__": 

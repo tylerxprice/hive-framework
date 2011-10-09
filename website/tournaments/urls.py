@@ -10,5 +10,6 @@ urlpatterns = patterns('',
       template_name='tournaments/index.html')),
   (r'^(?P<id>\d+)/$', 'tournaments.views.tournament'),
   (r'^game/(?P<id>\d+)/$', 'tournaments.views.game'),
+  (r'^rankings/', 'tournaments.views.rankings'),
 )
 

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Rankings | Hive Bot Tournament{% endblock title %}
+
+{% block content %}
+
+<h1>All-Time Rankings</h1>
+
+{% ifnotequal rankings|length 0 %}
+  <table>
+    <thead>
+      <th>Bot</th>
+      <th>Wins</th>
+      <th>Loses</th>
+      <th>Draws</th>
+      <th>Errors</th>
+      <th>Time</th>
+      <th>Moves (Avg)</th>
+      <th>Time/Move (Avg)</th>
+      <th>Winning Pct</th>
+    </thead>
+    <tbody>
+      {% for ranking in rankings %}
+        <tr>
+          <td>{{ ranking.name }}</td>
+          <td>{{ ranking.wins }}</td>
+          <td>{{ ranking.losses }}</td>
+          <td>{{ ranking.draws }}</td>
+          <td>{{ ranking.errors }}</td>
+          <td>{{ ranking.time }}</td>
+          <td>{{ ranking.average_number_of_moves }}</td>
+          <td>{{ ranking.average_time_per_move }}</td>
+          <td>{{ ranking.winning_percentage }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No tournaments have been played.</p>
+{% endifnotequal %}
+
+{% endblock content %}

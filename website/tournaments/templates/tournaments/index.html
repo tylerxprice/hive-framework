@@ -14,6 +14,7 @@
           <th>Duration</th>
           <th># Bots</th>
           <th>Status</th>
+          <th>Winner</th>
         </tr>
       </thead>
       <tbody>
@@ -23,6 +24,7 @@
             <td>{{ tournament.duration }}</td>
             <td>{{ tournament.number_of_bots }}</td>
             <td>{{ tournament.get_status_display }}</td>
+            <td>{{ tournament.get_winner_name }}</td>
           </tr>
         {% endfor %}
       </tbody>
