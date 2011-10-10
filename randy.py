@@ -90,7 +90,7 @@ class MoveSearch():
     for move in validMoves:
       self.game.makeMove(move)
 
-      val = -self.minimax(depth - 1, -alpha, -beta)
+      val = -self.minimax(depth - 1, -beta, -alpha)
       
       self.game.unmakeMove(move)
 
