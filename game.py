@@ -37,7 +37,7 @@ class Game:
       raise MoveError("You must play your Queen Bee before you may move other insects.")
 
     # queen must be played in a player's first 4 moves
-    if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
+    if (self.turnNumber + 1) / 2 == 4 and not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
       raise MoveError("You must play your Queen Bee in your first 4 turns.")
 
     # get proposed move point

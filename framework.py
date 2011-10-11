@@ -9,7 +9,7 @@ from time import time
 from errors import *
 from game import *
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -154,13 +154,20 @@ class Framework():
 
     if self.game.currentPlayer.bot:
       try:
-        commandLine = self.game.currentPlayer.bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
+        bot = self.game.currentPlayer.bot
+        if bot.endswith('.py'):
+          bot = 'python ' + bot
+
+        commandLine = bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
+        logging.debug('Framework.readMove: commandLine = ' + commandLine)
         args = shlex.split(commandLine)
+
         startTime = time()
         botProcess = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=None)
         moveString, errorOutput = botProcess.communicate()
-        sys.stderr.write(errorOutput)
         endTime = time()
+
+        sys.stderr.write(errorOutput)
         moveTime = round((endTime - startTime) * 100)
         self.game.currentPlayer.timeUsed += moveTime
       except OSError as details:
