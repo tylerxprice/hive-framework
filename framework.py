@@ -32,6 +32,8 @@ class Framework():
     self.args['white'] = self.readBot('white', self.args['white'])
     self.args['black'] = self.readBot('black', self.args['black'])
     self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'], self.args['expansions'])
+    self.game.hive.printBoard()
+
     results = {}
     results['play_by_play'] = [] 
 

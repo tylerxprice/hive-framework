@@ -361,12 +361,12 @@ class Hive:
             s[sy][sx] = '.'
         
 
-    sys.stderr.write('   ' + (' ' *  (4 * (width + 2)) + 'y\n'))
+    sys.stderr.write('|   ' + (' ' *  (4 * ((width -1) + 2) + 2 * height ) + 'y\n'))
     for si in s:
       if s.index(si) == len(s) - 1:
-        sys.stderr.write('x   ')
+        sys.stderr.write('|x   ')
       else:
-        sys.stderr.write('    ')
+        sys.stderr.write('|    ')
       sys.stderr.write(''.join(si) + '\n')
 
     sys.stderr.write('\n')
