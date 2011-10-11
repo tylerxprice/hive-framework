@@ -56,8 +56,7 @@ class Framework():
           error = self.game.currentPlayer.color
           break;
       else:
-        if not self.game.whitePlayer.bot or not self.game.blackPlayer.bot:
-          self.game.printBoard()
+        self.game.printBoard()
 
       results['play_by_play'].append({
         'move_number': self.game.turnNumber - 1,
