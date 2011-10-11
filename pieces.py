@@ -41,7 +41,7 @@ class Piece:
 
     return None
 
-  def isPiecePinned(self, hive):
+  def isPinned(self, hive):
     if self.point == Point.NONE: # not on board yet
       return False
 
@@ -99,7 +99,7 @@ class QueenBeePiece(Piece):
     return possiblePoints
 
   def isPinned(self, hive):
-    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point)
 
 
 class SpiderPiece(Piece):
@@ -157,7 +157,7 @@ class SpiderPiece(Piece):
           break
 
   def isPinned(self, hive):
-    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point)
 
 
 class BeetlePiece(Piece):
@@ -229,7 +229,7 @@ class AntPiece(Piece):
     return possiblePoints
 
   def isPinned(self, hive):
-    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point)
 
 
 class GrasshopperPiece(Piece):
