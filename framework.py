@@ -162,7 +162,7 @@ class Framework():
         sys.stderr.write(errorOutput)
         endTime = time()
         moveTime = round((endTime - startTime) * 100)
-        self.game.currentPlayer.timeUsed += totalTime
+        self.game.currentPlayer.timeUsed += moveTime
       except OSError as details:
         logging.debug('Framework.readMove: OSError = ' + str(details))
         raise InputError(self.game.currentPlayer.bot + ' process failed to execute')
