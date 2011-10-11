@@ -60,11 +60,14 @@ class QueenBeePiece(Piece):
 
     # can move 1 empty hex away, but cannot enter gates
     possiblePoints = []
+
+    # can't move if pinned (needs 2 adjacent points to move through)
+    if not hive.hasTwoEmptyAdjacentPoints(self.point):
+      return possiblePoints 
     
-    # get adjacencies
     adjacentPoints = hive.getAdjacentPoints(self.point)
 
-    # partition into occupied and free (exclude gates)
+    # partition adjacent points into occupied and free (exclude gates)
     occupiedAdjacentPoints = []
     freeAdjacentPoints = []
     for adjacentPoint in adjacentPoints:
@@ -100,6 +103,10 @@ class SpiderPiece(Piece):
     # can move 3 emtpy hex away, but cannot enter gates and cannot backtrack
     possiblePoints = []
 
+    # can't move if pinned (needs 2 adjacent points to move through)
+    if not hive.hasTwoEmptyAdjacentPoints(self.point):
+      return possiblePoints 
+
     # find all 3 node segments in the graph that is the non-gate border nodes starting at the current node
     hive.pickupPiece(self)
     self._visitPoint(self.point, 0, [], possiblePoints, hive)
@@ -119,7 +126,7 @@ class SpiderPiece(Piece):
     # get adjacencies
     adjacentPoints = hive.getAdjacentPoints(point)
 
-    # partition into occupied and free (exclude) gates
+    # partition into occupied and free (exclude gates)
     occupiedAdjacentPoints = []
     freeAdjacentPoints = []
     for adjacentPoint in adjacentPoints:
@@ -154,10 +161,9 @@ class BeetlePiece(Piece):
     if self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
       possiblePoints = hive.getAdjacentPoints(self.point)
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
-      # get adjacencies
       adjacentPoints = hive.getAdjacentPoints(self.point)
 
-      # partition into occupied and free (exclude) gates
+      # partition adjacencies into occupied and free (exclude gates)
       occupiedAdjacentPoints = []
       freeAdjacentPoints = []
       for adjacentPoint in adjacentPoints:
@@ -192,6 +198,12 @@ class AntPiece(Piece):
       return possiblePoints
 
     # can move to any non-gate hex around hive
+    possiblePoints = []
+
+    # can't move if pinned (needs 2 adjacent points to move through)
+    if not hive.hasTwoEmptyAdjacentPoints(self.point):
+      return possiblePoints 
+
     hive.pickupPiece(self)
     possiblePoints = hive.getBorderPoints(False) # False = exclude gates
     possiblePoints.remove(self.point)

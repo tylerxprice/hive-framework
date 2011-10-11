@@ -129,6 +129,21 @@ class Hive:
     return borderCount >= 5
 
 
+  def hasTwoEmptyAdjacentPoints(self, point):
+    adjacentPoints = self.getAdjacentPoints(point)
+
+    freeCount = 0
+    maxFreeCount = 0
+    for adjacentPoint in adjacentPoints:
+      if self.getTopPieceAtPoint(adjacentPoint):
+        freeCount = 0 # reset free count
+      else:
+        freeCount += 1
+      maxFreeCount = max(maxFreeCount, freeCount)
+
+    return maxFreeCount > 1
+
+
   def getBorderPoints(self, includeGates):
     points = []
     uniquePoints = dict()
