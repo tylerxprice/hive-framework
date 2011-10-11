@@ -26,9 +26,11 @@ class Piece:
   def getNotation(self):
     return self.color + self.kind + str(self.number)
 
+  def isPlayed(self):
+    return not self.point == Point.NONE
 
   def getPossiblePoints(self, hive):
-    if self.point == Point(None,None,None): # not on board yet
+    if not self.isPlayed():
       return hive.getEntryPoints(self.color)
     elif not self == hive.getTopPieceAtPoint(self.point): # beetle pinned
       logging.debug('Piece.getPossiblePoints: piece beetle pinned')
@@ -38,6 +40,17 @@ class Piece:
       return []
 
     return None
+
+  def isPiecePinned(self, hive):
+    if self.point == Point.NONE: # not on board yet
+      return False
+
+    if not self == hive.getTopPieceAtPoint(self.point): # beetle pinned
+      return True 
+    elif hive.isBrokenWithoutPiece(self): # if picking up breaks hive: 0 possible points
+      return True 
+
+    return False
 
 
   def __repr__(self):
@@ -85,6 +98,8 @@ class QueenBeePiece(Piece):
 
     return possiblePoints
 
+  def isPinned(self, hive):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
 
 
 class SpiderPiece(Piece):
@@ -141,6 +156,8 @@ class SpiderPiece(Piece):
           self._visitPoint(freeAdjacentPoint, depth + 1, currentPath, possiblePoints, hive)
           break
 
+  def isPinned(self, hive):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
 
 
 class BeetlePiece(Piece):
@@ -210,6 +227,9 @@ class AntPiece(Piece):
     hive.putdownPiece(self, self.point)
 
     return possiblePoints
+
+  def isPinned(self, hive):
+    return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point):
 
 
 class GrasshopperPiece(Piece):

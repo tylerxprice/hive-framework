@@ -37,7 +37,7 @@ class Player:
 
   def hasPlayed(self, kind, number = ''):
     key = kind + str(number)
-    return not self.pieces[key].point == (None, None, None)
+    return self.pieces[key].isPlayed()
 
 
   def addHiveState(self, state):

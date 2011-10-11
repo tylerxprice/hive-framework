@@ -22,6 +22,13 @@ class Game:
     self._readMoveList(moveList)
     self.winner = None
 
+  def getCurrentPlayer(self):
+    return self.currentPlayer
+
+  def getOpposingPlayer(self):
+    if self.currentPlayer.color == Player.WHITE:
+      return self.blackPlayer
+    return self.whitePlayer
 
   def playMove(self, moveString):
     self.validateMoveString(moveString)
@@ -102,7 +109,7 @@ class Game:
   def getValidMoves(self):
     moveList = []
 
-    if self.turnNumber / 2 + 1 == 4 and not self.currentPlayer.hasPlayed('Q'):
+    if (self.turnNumber + 1) / 2 == 4 and not self.currentPlayer.hasPlayed('Q'):
       # queen must be played in a player's first 4 moves
       queenBee = self.currentPlayer.pieces['Q']
       for point in queenBee.getPossiblePoints(self.hive):
