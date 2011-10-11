@@ -9,7 +9,7 @@ from time import time
 from errors import *
 from game import *
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -56,6 +56,8 @@ class Framework():
           error = self.game.currentPlayer.color
           break;
       else:
+        sys.stdout.write('--times="'+self.game.getTimeControlsCsv()+'"\n')
+        sys.stdout.write('--moves="'+self.game.getMoveListCsv()+'"\n')
         self.game.printBoard()
 
       results['play_by_play'].append({
@@ -168,7 +170,7 @@ class Framework():
         moveString, errorOutput = botProcess.communicate()
         endTime = time()
 
-        sys.stderr.write(errorOutput)
+        sys.stdout.write(errorOutput)
         moveTime = round((endTime - startTime) * 100)
         self.game.currentPlayer.timeUsed += moveTime
       except OSError as details:

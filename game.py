@@ -122,7 +122,7 @@ class Game:
       canMoveHivePieces = False
 
     for key, piece in self.currentPlayer.pieces.iteritems():
-      if canMoveHivePieces or piece.point == Point.NONE:
+      if canMoveHivePieces or not piece.isPlayed():
         for point in piece.getPossiblePoints(self.hive):
           moveList.append(Move(piece, piece.point, point))
 

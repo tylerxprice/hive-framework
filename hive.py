@@ -341,7 +341,7 @@ class Hive:
     # build a 2D array of chars that will eventually be printed
     s = []
     for i in range (2 * height + 2):
-      s.append([' '] * (4 * width + 2 * height + 1))
+      s.append([' '] * (4 * width + 2 * height + 1 + 2)) # added 2 for padding
 
     #logging.debug('Hive.printBoard: s_dims=' + str(len(s[0])) + 'x' + str(len(s)))
 
@@ -351,14 +351,16 @@ class Hive:
       
       if absy < height: # y-axis
         axisy = 4 * width - 2 * absy + 2 * height
-        s[sy][axisy] = str(y)
+        s[sy][axisy + 2] = str(y)
 
       for x in range(limits[0], limits[2] + 1): # width/columns
         absx = x - limits[0]
-        sx = 4 * absx - 2 * absy + 2 * height #magic mapping formula
+        sx = 4 * absx - 2 * absy + 2 * height + 2 #magic mapping formula
 
         if absy == height: # x-axis
-          s[sy][sx] = str(x)
+          strx = str(x)
+          for i in range(0,len(strx)): 
+            s[sy][sx+i] = strx[i]
         else:
           key = self.getBoardKey(Point(x, y, 0))
           if self.board.has_key(key):
@@ -376,12 +378,12 @@ class Hive:
             s[sy][sx] = '.'
         
 
-    sys.stderr.write('|   ' + (' ' *  (4 * ((width -1) + 2) + 2 * height ) + 'y\n'))
+    sys.stderr.write('| ' + (' ' *  (4 * ((width -1) + 2) + 2 * height ) + 'y\n'))
     for si in s:
       if s.index(si) == len(s) - 1:
-        sys.stderr.write('|x   ')
+        sys.stderr.write('|x')
       else:
-        sys.stderr.write('|    ')
+        sys.stderr.write('| ')
       sys.stderr.write(''.join(si) + '\n')
 
     sys.stderr.write('\n')

@@ -78,6 +78,8 @@ class QueenBeePiece(Piece):
     if not hive.hasTwoEmptyAdjacentPoints(self.point):
       return possiblePoints 
     
+    hive.pickupPiece(self)
+
     adjacentPoints = hive.getAdjacentPoints(self.point)
 
     # partition adjacent points into occupied and free (exclude gates)
@@ -95,6 +97,8 @@ class QueenBeePiece(Piece):
         if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
           possiblePoints.append(freeAdjacentPoint)
           break
+    
+    hive.putdownPiece(self, self.point)
 
     return possiblePoints
 
@@ -175,9 +179,13 @@ class BeetlePiece(Piece):
 
     possiblePoints = []
 
-    if self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
+    if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
+      logging.debug('BeetlePiece.getPossiblePoints: onTop')
       possiblePoints = hive.getAdjacentPoints(self.point)
+
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
+      hive.pickupPiece(self)
+
       adjacentPoints = hive.getAdjacentPoints(self.point)
 
       # partition adjacencies into occupied and free (exclude gates)
@@ -189,15 +197,24 @@ class BeetlePiece(Piece):
         elif not hive.isPointInGate(adjacentPoint):
           freeAdjacentPoints.append(adjacentPoint)
 
-      # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-      for freeAdjacentPoint in freeAdjacentPoints:
-        for occupiedAdjacentPoint in occupiedAdjacentPoints:
-          if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
-            possiblePoints.append(freeAdjacentPoint)
-            break
+      logging.debug('BeetlePiece.getPossiblePoints: free = ' + str(freeAdjacentPoints))
+      logging.debug('BeetlePiece.getPossiblePoints: occupied = ' + str(occupiedAdjacentPoints))
 
-      # can also move on to occupied adjacent hexes
-      possiblePoints.extend(occupiedAdjacentPoints)
+      # can't move to free points if pinned (needs 2 adjacent points to move through)
+      if not hive.hasTwoEmptyAdjacentPoints(self.point):
+        possiblePoints = occupiedAdjacentPoints 
+      else:
+        # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+        for freeAdjacentPoint in freeAdjacentPoints:
+          for occupiedAdjacentPoint in occupiedAdjacentPoints:
+            if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
+              possiblePoints.append(freeAdjacentPoint)
+              break
+
+        # can also move on to occupied adjacent hexes
+        possiblePoints.extend(occupiedAdjacentPoints)
+
+      hive.putdownPiece(self, self.point)
 
     return possiblePoints
 
