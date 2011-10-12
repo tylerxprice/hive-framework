@@ -57,6 +57,14 @@ class Hive:
   # relative movement directives (not connectivity)
   (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
 
+  # adjacent point indices
+  ADJACENT_TOPRIGHT = 0
+  ADJACENT_RIGHT = 1
+  ADJACENT_BOTTOMRIGHT = 2
+  ADJACENT_BOTTOMLEFT = 3
+  ADJACENT_LEFT = 4
+  ADJACENT_TOPLEFT = 5
+
   def __init__(self, expansions):
     self.board = dict()
     self.zobrist = Zobrist(5 + len(expansions))
@@ -98,6 +106,20 @@ class Hive:
             Point(point.x, point.y + 1, 0),      # (x, y+1)    BOTTOMLEFT
             Point(point.x - 1, point.y, 0),      # (x-1, y)    LEFT
             Point(point.x - 1, point.y - 1, 0)] # (x-1, y-1)  TOPLEFT
+
+  def getAdjacentPoint(self, point, index):
+    if index == ADJACENT_TOPRIGHT: 
+      return Point(point.x, point.y - 1, 0)
+    if index == ADJACENT_RIGHT: 
+      return Point(point.x + 1, point.y, 0)      # (x+1, y)    RIGHT
+    if index == ADJACENT_BOTTOMRIGHT: 
+      return Point(point.x + 1, point.y + 1, 0)  # (x+1, y+1)  BOTTOMRIGHT
+    if index == ADJACENT_BOTTOMLEFT: 
+      return Point(point.x, point.y + 1, 0)      # (x, y+1)    BOTTOMLEFT
+    if index == ADJACENT_LEFT: 
+      return Point(point.x - 1, point.y, 0)      # (x-1, y)    LEFT
+    if index == ADJACENT_TOPLEFT: 
+      return Point(point.x - 1, point.y - 1, 0) # (x-1, y-1)  TOPLEFT
 
 
   def arePointsAdjacent(self, firstPoint, secondPoint):
@@ -336,14 +358,11 @@ class Hive:
     limits[3] += 1
     width = limits[2] - limits[0] + 1
     height = limits[3] - limits[1] + 1
-    #logging.debug('Hive.printBoard: limits=' + str(limits) + ', dims=' + str(width) + 'x' + str(height))
 
     # build a 2D array of chars that will eventually be printed
     s = []
     for i in range (2 * height + 2):
       s.append([' '] * (4 * width + 2 * height + 1 + 2)) # added 2 for padding
-
-    #logging.debug('Hive.printBoard: s_dims=' + str(len(s[0])) + 'x' + str(len(s)))
 
     for y in range(limits[1], limits[3] + 2): # height/rows
       absy = y - limits[1]

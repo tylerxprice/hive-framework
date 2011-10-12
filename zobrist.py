@@ -3,7 +3,10 @@ import random
 from pieces import Point
 
 class Zobrist:
-  """ This is a modification of Zobrist keys: they are lazily generated into a dictionary since the number of different hexes a piece can land throughout the game on is indeterminate. """
+  """ 
+    This is a modification of Zobrist keys: they are lazily generated into a dictionary 
+    since the number of different hexes a piece can land throughout the game on is indeterminate. 
+  """
 
   def __init__(self, numberOfPieces):
     self.zobristKeys = [[dict() for y in range(numberOfPieces)] for x in range(2)]
@@ -28,11 +31,11 @@ class Zobrist:
 
   def changeSide(self):
     self.currentState = self.currentState ^ self.sideKey
-    logging.debug('Zobrist.changeSide: state = ' + str(self.currentState))
+    #logging.debug('Zobrist.changeSide: state = ' + str(self.currentState))
 
 
   def updateState(self, piece):
     key = self._getZobristKey(piece.getColorIndex(), piece.getKindIndex(), piece.point)
     self.currentState = self.currentState ^ key
-    logging.debug('Zobrist.updateState: state = ' + str(self.currentState))
+    #logging.debug('Zobrist.updateState: state = ' + str(self.currentState))
 

@@ -61,7 +61,7 @@ class OpeningBook():
 
 
 class MoveSearch():
-  WIN_VALUE = 2**15 - 1
+  WIN_SCORE = 2**15 - 1
 
   def __init__(self, game):
     self.game = game
@@ -117,7 +117,8 @@ class MoveSearch():
     if winner == Game.WINNER_DRAW:
       return signFlip * MoveSearch.CONTEMPT_FACTOR
 
-    return signFlip * MoveSearch.WIN_VALUE * winner
+    return signFlip * MoveSearch.WIN_SCORE * winner
+
 
   def evaluate(self):
     signFlip = 1

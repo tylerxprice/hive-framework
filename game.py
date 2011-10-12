@@ -33,40 +33,43 @@ class Game:
   def playMove(self, moveString):
     self.validateMoveString(moveString)
 
-    # check if the piece hasn't been played yet, otherwise take if from the board
-    pieceAttributes = self.parsePieceAttributes(moveString, self.currentPlayer.color)
-    piece = self.currentPlayer.getPiece(pieceAttributes)
-    if not piece:
-      raise InputError ("The piece you entered is not valid.")
+    if moveString == 'pass' and not len(self.getValidMoves()) == 0:
+      raise MoveError("You cannot pass when you have legal moves.")
+    else:
+      # check if the piece hasn't been played yet, otherwise take if from the board
+      pieceAttributes = self.parsePieceAttributes(moveString, self.currentPlayer.color)
+      piece = self.currentPlayer.getPiece(pieceAttributes)
+      if not piece:
+        raise InputError ("The piece you entered is not valid.")
 
-    # may not move a piece until queen is moved
-    if self.currentPlayer.hasPlayed(piece.kind, piece.number) and not self.currentPlayer.hasPlayed('Q'):
-      raise MoveError("You must play your Queen Bee before you may move other insects.")
+      # may not move a piece until queen is moved
+      if self.currentPlayer.hasPlayed(piece.kind, piece.number) and not self.currentPlayer.hasPlayed('Q'):
+        raise MoveError("You must play your Queen Bee before you may move other insects.")
 
-    # queen must be played in a player's first 4 moves
-    if (self.turnNumber + 1) / 2 == 4 and not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
-      raise MoveError("You must play your Queen Bee in your first 4 turns.")
+      # queen must be played in a player's first 4 moves
+      if (self.turnNumber + 1) / 2 == 4 and not self.currentPlayer.hasPlayed('Q') and not piece.kind == 'Q':
+        raise MoveError("You must play your Queen Bee in your first 4 turns.")
 
-    # get proposed move point
-    relativePiece = None
-    relativePosition = None
-    relativeAttributes = self.parseRelativeAttributes(moveString)
-    if (relativeAttributes):
-      relativePiece = self.hive.getPiece(relativeAttributes[0])
-      if not relativePiece:
-        raise InputError ("The relative piece you entered is not valid.")
-      relativePosition = relativeAttributes[1]
-    proposedPoint = self.hive.getRelativePoint(piece, relativePiece, relativePosition)
+      # get proposed move point
+      relativePiece = None
+      relativePosition = None
+      relativeAttributes = self.parseRelativeAttributes(moveString)
+      if (relativeAttributes):
+        relativePiece = self.hive.getPiece(relativeAttributes[0])
+        if not relativePiece:
+          raise InputError ("The relative piece you entered is not valid.")
+        relativePosition = relativeAttributes[1]
+      proposedPoint = self.hive.getRelativePoint(piece, relativePiece, relativePosition)
 
-    # check if valid move
-    possiblePoints = piece.getPossiblePoints(self.hive)
-    if not self.isValidMove(proposedPoint, possiblePoints):
-      raise MoveError ("The move you entered is not valid.")
+      # check if valid move
+      possiblePoints = piece.getPossiblePoints(self.hive)
+      if not self.isValidMove(proposedPoint, possiblePoints):
+        raise MoveError ("The move you entered is not valid.")
 
-    # make the move
-    if not piece.point == Point.NONE:
-      self.hive.pickupPiece(piece)
-    self.hive.putdownPiece(piece, proposedPoint)
+      # make the move
+      if not piece.point == Point.NONE:
+        self.hive.pickupPiece(piece)
+      self.hive.putdownPiece(piece, proposedPoint)
 
     self.moveList.append(str(self.turnNumber) + '. ' + moveString)
     self.turnNumber += 1
@@ -197,7 +200,7 @@ class Game:
 
   def validateMoveString(self, moveString):
     """ Basic input string validation (note: this is incomplete doesn't validate invalid stuff like wB3 -bQ2) """
-    match = re.match('^[bw]?[ABGLMQS][0-3]?(?:\\s[\\\/-]?[bw][ABGLMQS][0-3]?[\\\/-]?)?$', moveString)
+    match = re.match('^(?:pass)|(?:[bw]?[ABGLMQS][0-3]?(?:\\s[\\\/-]?[bw][ABGLMQS][0-3]?[\\\/-]?)?)$', moveString)
     if not match:
       raise InputError("The move you entered is not valid.")
 
