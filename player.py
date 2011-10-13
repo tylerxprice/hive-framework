@@ -55,3 +55,4 @@ class Player:
 
     length = len(self.seenHiveStates)
     return self.seenHiveStates[length - 5] == self.seenHiveStates[length - 3] == self.seenHiveStates[length - 1]
+

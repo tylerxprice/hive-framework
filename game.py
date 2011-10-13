@@ -159,41 +159,35 @@ class Game:
   def getMoveNotation(self, move):
     moveString = move.piece.getNotation()
 
-    #(x, y-1) TOPRIGHT
-    point = Point(move.endPoint.x, move.endPoint.y - 1, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x+1, y) NORTHEAST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x + 1, move.endPoint.y, 0))
     if relativePiece:
-      return moveString + ' ' + Hive.TOPRIGHT.strip()+ relativePiece.getNotation()
+      return moveString + ' ' + Hive.NORTHEAST.strip() + relativePiece.getNotation()
 
-    #(x+1, y) RIGHT
-    point = Point(move.endPoint.x + 1, move.endPoint.y, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x+1, y+1) EAST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x + 1, move.endPoint.y + 1, 0))
     if relativePiece:
-      return moveString + ' ' + Hive.RIGHT.strip()+ relativePiece.getNotation()
+      return moveString + ' ' + Hive.EAST.strip() + relativePiece.getNotation()
 
-    #(x+1, y+1) BOTTOMRIGHT
-    point = Point(move.endPoint.x + 1, move.endPoint.y + 1, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x, y+1) SOUTHEAST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x, move.endPoint.y + 1, 0))
     if relativePiece:
-      return moveString + ' ' + Hive.BOTTOMRIGHT.strip()+ relativePiece.getNotation()
+      return moveString + ' ' + Hive.SOUTHEAST.strip() + relativePiece.getNotation()
 
-    #(x, y+1) BOTTOMLEFT
-    point = Point(move.endPoint.x, move.endPoint.y + 1, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x-1, y) SOUTHWEST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x - 1, move.endPoint.y, 0))
     if relativePiece:
-      return moveString + ' ' + relativePiece.getNotation() + Hive.BOTTOMLEFT.strip()
+      return moveString + ' ' + relativePiece.getNotation() + Hive.SOUTHWEST.strip()
 
-    #(x-1, y) LEFT
-    point = Point(move.endPoint.x - 1, move.endPoint.y, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x-1, y-1) WEST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x - 1, move.endPoint.y - 1, 0))
     if relativePiece:
-      return moveString + ' ' + relativePiece.getNotation() + Hive.LEFT.strip()
+      return moveString + ' ' + relativePiece.getNotation() + Hive.WEST.strip()
 
-    #(x-1, y-1) TOPLEFT
-    point = Point(move.endPoint.x - 1, move.endPoint.y - 1, 0)
-    relativePiece = self.hive.getTopPieceAtPoint(point)
+    #(x, y-1) NORTHWEST
+    relativePiece = self.hive.getTopPieceAtPoint(Point(move.endPoint.x, move.endPoint.y - 1, 0))
     if relativePiece:
-      return moveString + ' ' + relativePiece.getNotation() + Hive.TOPLEFT.strip()
+      return moveString + ' ' + relativePiece.getNotation() + Hive.NORTHWEST.strip()
 
     return moveString
 

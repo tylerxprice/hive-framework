@@ -26,8 +26,10 @@ class Piece:
   def getNotation(self):
     return self.color + self.kind + str(self.number)
 
+
   def isPlayed(self):
     return not self.point == Point.NONE
+
 
   def getPossiblePoints(self, hive):
     if not self.isPlayed():
@@ -40,6 +42,7 @@ class Piece:
       return []
 
     return None
+
 
   def isPinned(self, hive):
     if self.point == Point.NONE: # not on board yet
@@ -266,17 +269,7 @@ class GrasshopperPiece(Piece):
     # in each direction, starting one occupied space over, find first borderPoint
     possiblePoints = []
 
-    #(x, y-1) TOPRIGHT
-    point = Point(self.point.x, self.point.y - 1, 0)
-    piece = hive.getTopPieceAtPoint(point)
-    if piece:
-      while True:
-        point = Point(point.x, point.y - 1, 0)
-        if not hive.getTopPieceAtPoint(point):
-          possiblePoints.append(point)
-          break
-
-    #(x+1, y) RIGHT
+    #(x+1, y) NORTHEAST
     point = Point(self.point.x + 1, self.point.y, 0)
     piece = hive.getTopPieceAtPoint(point)
     if piece:
@@ -286,7 +279,7 @@ class GrasshopperPiece(Piece):
           possiblePoints.append(point)
           break
 
-    #(x+1, y+1) BOTTOMRIGHT
+    #(x+1, y+1) EAST
     point = Point(self.point.x + 1, self.point.y + 1, 0)
     piece = hive.getTopPieceAtPoint(point)
     if piece:
@@ -296,7 +289,7 @@ class GrasshopperPiece(Piece):
           possiblePoints.append(point)
           break
 
-    #(x, y+1) BOTTOMLEFT
+    #(x, y+1) SOUTHEAST
     point = Point(self.point.x, self.point.y + 1, 0)
     piece = hive.getTopPieceAtPoint(point)
     if piece:
@@ -306,7 +299,7 @@ class GrasshopperPiece(Piece):
           possiblePoints.append(point)
           break
 
-    #(x-1, y) LEFT
+    #(x-1, y) SOUTHWEST
     point = Point(self.point.x - 1, self.point.y, 0)
     piece = hive.getTopPieceAtPoint(point)
     if piece:
@@ -316,12 +309,22 @@ class GrasshopperPiece(Piece):
           possiblePoints.append(point)
           break
 
-    #(x-1, y-1) TOPLEFT
+    #(x-1, y-1) WEST
     point = Point(self.point.x - 1, self.point.y - 1, 0)
     piece = hive.getTopPieceAtPoint(point)
     if piece:
       while True:
         point = Point(point.x - 1, point.y - 1, 0)
+        if not hive.getTopPieceAtPoint(point):
+          possiblePoints.append(point)
+          break
+
+    #(x, y-1) NORTHWEST
+    point = Point(self.point.x, self.point.y - 1, 0)
+    piece = hive.getTopPieceAtPoint(point)
+    if piece:
+      while True:
+        point = Point(point.x, point.y - 1, 0)
         if not hive.getTopPieceAtPoint(point):
           possiblePoints.append(point)
           break

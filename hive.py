@@ -1,4 +1,5 @@
 import logging
+import math
 import sys
 from pieces import *
 from zobrist import *
@@ -11,40 +12,31 @@ class Move(namedtuple('Move', ['piece', 'startPoint', 'endPoint'])):
 
 class Hive:
   """ The Hive "board"
-                         +  1   2   3   4   5   6   7   8   9   10
-                                                                    
-                      A   .   .   .   .   .   .   .   .   .   .   A
-                                                                    
-                    B   .   .   .   .   .   .   .   .   .   .   B
-                                                                    
-                  C   .   .   .   .   .   .   .   .   .   .   C
-                                                                    
-                D   .   .   .   .   .   .   .   .   .   .   D
-                             / \ / \
-              E   .   .   . | * | * | .   .   .   .   .   E
-                           / \ / \ / \
-            F   .   .   . | * |wQ | * | .   .   .   .   F
-                           \ / \ / \ /
-          G   .   .   .   . | * | * | .   .   .   .   G
-                             \ / \ /
-        H   .   .   .   .   .   .   .   .   .   .   H
-                                                                    
-      I   .   .   .   .   .   .   .   .   .   .   I
-                                                                    
-    J   .   .   .   .   .   .   .   .   .   .   J
-                                                                    
-      1   2   3   4   5   6   7   8   9   10
+          x-axis     
+    -1   0   1   2   3
+      \   \   \   \   \
+       .   .   .   .   .
+      /     / \ / \
+ y  -2   . |wQ |wS1| .
+          / \ / \ /
+ a     . |bQ | .   .   .
+ x    /   \ /
+ i  -1   .   .   .   .
+ s
+       .   .   .   .   .
+      /
+     0
 
-    The hive is not limited to this 10 by 10 board, the first piece will be placed at (0,0) and it will expand infinitely in both the positive and negative directions. 
+    The hive is not limited to the size pictured, the first piece will be placed at (0,0) and the board may expand infinitely in both the positive and negative directions. 
     This is a three dimensional board with the pieces initially played at z=0 (where z is left out of the point we assume the piece with max(z)).
 
     (x, y) connects to:
-      (x, y-1) TOPRIGHT
-      (x+1, y) RIGHT
-      (x+1, y+1) BOTTOMRIGHT
-      (x, y+1) BOTTOMLEFT
-      (x-1, y) LEFT
-      (x-1, y-1) TOPLEFT
+      (x+1, y) NORTHEAST
+      (x+1, y+1) EAST
+      (x, y+1) SOUTHEAST
+      (x-1, y) SOUTHWEST
+      (x-1, y-1) WEST
+      (x, y-1) NORTHWEST
       Also connects to pieces at (x,y,z-1) COVERING and (x,y,z+1) COVERED
      
     Since the board expands ad infinitum, we will use a dictionary with keys "x,y". Where each entry is a list of pieces at the hex.
@@ -52,18 +44,29 @@ class Hive:
       board["0,0"] = [wQ]
       board["-1,0"] = [bQ, wB1]   -- the white beetle is on top of of the black queen bee
       board["-1,-1] = [bG1]
+
+
+    hexspace -> array given by:
+    hex2array(x,y) = (floor((x+y)/2),y-x)
+    array -> hexspace given by:
+    array2hex(x,y) = (x - floor(y/2),x+ceil(y/2))
+    
+    dX = B.x - A.x
+    dY = B.y - A.y
+    distance = (abs (dX) + abs (dY) + abs (dX - dY)) / 2
+
   """
 
   # relative movement directives (not connectivity)
-  (TOPRIGHT, RIGHT, BOTTOMRIGHT, BOTTOMLEFT, LEFT, TOPLEFT, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
+  (NORTHEAST, EAST, SOUTHEAST, SOUTHWEST, WEST, NORTHWEST, COVER) = (' /', ' -', ' \\', '/ ', '- ', '\\ ', '  ') 
 
   # adjacent point indices
-  ADJACENT_TOPRIGHT = 0
-  ADJACENT_RIGHT = 1
-  ADJACENT_BOTTOMRIGHT = 2
-  ADJACENT_BOTTOMLEFT = 3
-  ADJACENT_LEFT = 4
-  ADJACENT_TOPLEFT = 5
+  ADJACENT_NORTHEAST = 0
+  ADJACENT_EAST = 1
+  ADJACENT_SOUTHEAST = 2
+  ADJACENT_SOUTHWEST = 3
+  ADJACENT_WEST = 4
+  ADJACENT_NORTHWEST = 5
 
   def __init__(self, expansions):
     self.board = dict()
@@ -100,34 +103,38 @@ class Hive:
 
 
   def getAdjacentPoints(self, point):
-    return [Point(point.x, point.y - 1, 0),      # (x, y-1)    TOPRIGHT
-            Point(point.x + 1, point.y, 0),      # (x+1, y)    RIGHT
-            Point(point.x + 1, point.y + 1, 0),  # (x+1, y+1)  BOTTOMRIGHT
-            Point(point.x, point.y + 1, 0),      # (x, y+1)    BOTTOMLEFT
-            Point(point.x - 1, point.y, 0),      # (x-1, y)    LEFT
-            Point(point.x - 1, point.y - 1, 0)] # (x-1, y-1)  TOPLEFT
+    return [Point(point.x + 1, point.y, 0),      # (x+1, y)   NORTHEAST
+            Point(point.x + 1, point.y + 1, 0),  # (x+1, y+1) EAST
+            Point(point.x, point.y + 1, 0),      # (x, y+1)   SOUTHEAST
+            Point(point.x - 1, point.y, 0),      # (x-1, y)   SOUTHWEST
+            Point(point.x - 1, point.y - 1, 0),  # (x-1, y-1) WEST
+            Point(point.x, point.y - 1, 0)]      # (x, y-1)   NORTHWEST
 
   def getAdjacentPoint(self, point, index):
-    if index == ADJACENT_TOPRIGHT: 
+    if index == ADJACENT_NORTHEAST: 
+      return Point(point.x + 1, point.y, 0)
+    if index == ADJACENT_EAST: 
+      return Point(point.x + 1, point.y + 1, 0)
+    if index == ADJACENT_SOUTHEAST: 
+      return Point(point.x, point.y + 1, 0)
+    if index == ADJACENT_SOUTHWEST: 
+      return Point(point.x - 1, point.y, 0)
+    if index == ADJACENT_WEST: 
+      return Point(point.x - 1, point.y - 1, 0)
+    if index == ADJACENT_NORTHWEST: 
       return Point(point.x, point.y - 1, 0)
-    if index == ADJACENT_RIGHT: 
-      return Point(point.x + 1, point.y, 0)      # (x+1, y)    RIGHT
-    if index == ADJACENT_BOTTOMRIGHT: 
-      return Point(point.x + 1, point.y + 1, 0)  # (x+1, y+1)  BOTTOMRIGHT
-    if index == ADJACENT_BOTTOMLEFT: 
-      return Point(point.x, point.y + 1, 0)      # (x, y+1)    BOTTOMLEFT
-    if index == ADJACENT_LEFT: 
-      return Point(point.x - 1, point.y, 0)      # (x-1, y)    LEFT
-    if index == ADJACENT_TOPLEFT: 
-      return Point(point.x - 1, point.y - 1, 0) # (x-1, y-1)  TOPLEFT
+
 
 
   def arePointsAdjacent(self, firstPoint, secondPoint):
-    for point in self.getAdjacentPoints(firstPoint):
-      if point.x == secondPoint.x and point.y == secondPoint.y:
-        return True
+    return self.getDistanceBetweenPoints(firstPoint, secondPoint) == 1
 
-    return False
+
+  def getDistanceBetweenPoints(self, firstPoint, secondPoint):
+    dx = secondPoint.x - firstPoint.x
+    dy = secondPoint.y - firstPoint.y
+    return (abs(dx) + abs(dy) + abs(dx-dy)) / 2
+
 
   def doesPointOnlyBorderColor(self, point, color):
     for point in self.getAdjacentPoints(point):
@@ -257,24 +264,24 @@ class Hive:
       logging.debug('Hive.getRelativePoint: relativePosition=' + relativePosition)
 
       relativePoint = relativePiece.point
-      if relativePosition == Hive.TOPRIGHT:
-        logging.debug('Hive.getRelativePoint: TOPRIGHT')
-        newPoint = Point(relativePoint.x, relativePoint.y - 1, 0)
-      elif relativePosition == Hive.RIGHT:
-        logging.debug('Hive.getRelativePoint: RIGHT')
+      if relativePosition == Hive.NORTHEAST:
+        logging.debug('Hive.getRelativePoint: NORTHEAST')
         newPoint = Point(relativePoint.x + 1, relativePoint.y, 0)
-      elif relativePosition == Hive.BOTTOMRIGHT:
-        logging.debug('Hive.getRelativePoint: BOTTOMRIGHT')
+      elif relativePosition == Hive.EAST:
+        logging.debug('Hive.getRelativePoint: EAST')
         newPoint = Point(relativePoint.x + 1, relativePoint.y + 1, 0)
-      elif relativePosition == Hive.BOTTOMLEFT:
-        logging.debug('Hive.getRelativePoint: BOTTOMLEFT')
+      elif relativePosition == Hive.SOUTHEAST:
+        logging.debug('Hive.getRelativePoint: SOUTHEAST')
         newPoint = Point(relativePoint.x, relativePoint.y + 1, 0)
-      elif relativePosition == Hive.LEFT:
-        logging.debug('Hive.getRelativePoint: LEFT')
+      elif relativePosition == Hive.SOUTHWEST:
+        logging.debug('Hive.getRelativePoint: SOUTHWEST')
         newPoint = Point(relativePoint.x - 1, relativePoint.y, 0)
-      elif relativePosition == Hive.TOPLEFT:
-        logging.debug('Hive.getRelativePoint: TOPLEFT')
+      elif relativePosition == Hive.WEST:
+        logging.debug('Hive.getRelativePoint: WEST')
         newPoint = Point(relativePoint.x - 1, relativePoint.y - 1, 0)
+      elif relativePosition == Hive.NORTHWEST:
+        logging.debug('Hive.getRelativePoint: NORTHWEST')
+        newPoint = Point(relativePoint.x, relativePoint.y - 1, 0)
       elif relativePosition == Hive.COVER:
         logging.debug('Hive.getRelativePoint: COVER')
         newPoint = Point(relativePoint.x, relativePoint.y, relativePoint.z + 1)
@@ -324,97 +331,71 @@ class Hive:
 
 
   def printBoard(self):
-    """
-      Prints the "board" by mapping the trapezoidal hex representation into a 2D char array as follows:
-           sx        111111
-           0123456789012345  y
-       sy 0   / \ / \ / \     
-          1  | . | . | . | 0  
-          2 / \ / \ / \ /     
-          3| . | . | .   1    
-          4 \ / \ /           
-           0   1   2   x      
-
-      Char array indices are on the left and top axes, hex indices on the bottom and right axies
-      hex   -> char
-      (0,0) -> (4,1)
-      (1,0) -> (8,1)
-      (2,0) -> (12,1)
-      (0,1) -> (2,3)
-      (1,1) -> (6,3)
-      (2,1) -> (10,3)
-
-      sx = 4*x - 2*y + 2*h
-      sy = 2*y + 1
-      h = max(y)
-    """
-
-    # get max and min x/y values
-    # iterate through all x,y printing empty piece or top most piece
-    limits = self.getBoardLimits()
+    limits = self.getBoardArrayLimits()
     limits[0] -= 1
     limits[1] -= 1
     limits[2] += 1
     limits[3] += 1
+
     width = limits[2] - limits[0] + 1
     height = limits[3] - limits[1] + 1
+    swidth = 4 * (width) + 1 + 2
+    sheight = 2 * (height) + 1
 
-    # build a 2D array of chars that will eventually be printed
     s = []
-    for i in range (2 * height + 2):
-      s.append([' '] * (4 * width + 2 * height + 1 + 2)) # added 2 for padding
+    s0 = [' '] * swidth
+    s1 = [' '] * swidth
+    s2 = [' '] * swidth
 
-    for y in range(limits[1], limits[3] + 2): # height/rows
-      absy = y - limits[1]
-      sy = 2 * absy + 1 #magic mapping formula
-      
-      if absy < height: # y-axis
-        axisy = 4 * width - 2 * absy + 2 * height
-        s[sy][axisy + 2] = str(y)
+    for arry in range(limits[3], limits[1] - 1, -1):
+      offsetx = 0 if arry % 2 == 0 else  2
+      sx = offsetx + 2
+      for arrx in range(limits[0], limits[2] + 1, 1):
+        #array to hex
+        hexx = arrx - int(math.floor(float(arry)/2))
+        hexy = arrx + int(math.ceil(float(arry)/2))
 
-      for x in range(limits[0], limits[2] + 1): # width/columns
-        absx = x - limits[0]
-        sx = 4 * absx - 2 * absy + 2 * height + 2 #magic mapping formula
-
-        if absy == height: # x-axis
-          strx = str(x)
-          for i in range(0,len(strx)): 
-            s[sy][sx+i] = strx[i]
+        piece = self.getTopPieceAtPoint(Point(hexx,hexy,0))
+        if piece:
+          s0[sx-1] = '/'
+          s0[sx+1] = '\\'
+          s1[sx-2] = '|'
+          s1[sx-1] = piece.color
+          s1[sx] = piece.kind
+          s1[sx+1] = str(piece.number) if piece.number else ' '
+          s1[sx+2] = '|'
+          s2[sx-1] = '\\'
+          s2[sx+1] = '/'
         else:
-          key = self.getBoardKey(Point(x, y, 0))
-          if self.board.has_key(key):
-            piece = self.board[key][len(self.board[key]) - 1]
-            s[sy][sx-1] = piece.color
-            s[sy][sx] = piece.kind
-            s[sy][sx+1] = str(piece.number) if piece.number else ' '
-            s[sy-1][sx-1] = '/'
-            s[sy][sx-2] = '|'
-            s[sy+1][sx-1] = '\\'
-            s[sy+1][sx+1] = '/'
-            s[sy][sx+2] = '|'
-            s[sy-1][sx+1] = '\\'
-          else:
-            s[sy][sx] = '.'
-        
+          s1[sx] = '.'
+        sx += 4
+      
+      s.insert(0, s2)
+      s.insert(0, s1)
+      s2 = s0
+      s0 = [' '] * swidth
+      s1 = [' '] * swidth
+    s.insert(0,s2)
 
-    sys.stderr.write('| ' + (' ' *  (4 * ((width -1) + 2) + 2 * height ) + 'y\n'))
     for si in s:
-      if s.index(si) == len(s) - 1:
-        sys.stderr.write('|x')
-      else:
-        sys.stderr.write('| ')
-      sys.stderr.write(''.join(si) + '\n')
-
+      sys.stderr.write('# ' + ''.join(si) + '\n')
     sys.stderr.write('\n')
 
 
-  def getBoardLimits(self):
-    limits = [0, 0, 0, 0] # xmin, ymin, xmax, ymax
-    for key in self.board.keys():
-      for piece in self.board[key]:
-        limits[0] = min(limits[0], piece.point.x)
-        limits[1] = min(limits[1], piece.point.y)
-        limits[2] = max(limits[2], piece.point.x)
-        limits[3] = max(limits[3], piece.point.y)
+  def getBoardArrayLimits(self):
+    limits = [float('inf'), float('inf'), float('-inf'), float('-inf')] # xmin, ymin, xmax, ymax
+    for key, pieces in self.board.iteritems():
+      piece = pieces[0]
+      arrx = int(math.floor(float(piece.point.x + piece.point.y) / 2))
+      arry = piece.point.y - piece.point.x
+
+      limits[0] = min(limits[0], arrx)
+      limits[1] = min(limits[1], arry)
+      limits[2] = max(limits[2], arrx)
+      limits[3] = max(limits[3], arry)
+
+    if limits[0] == float('inf'):
+      limits = [0, 0, 0, 0]
+
     return limits 
 
