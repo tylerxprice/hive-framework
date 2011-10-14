@@ -1,10 +1,7 @@
 import argparse
-import logging
 import random
 import sys
 from game import *
-
-#logging.basicConfig(level=logging.DEBUG)
 
 
 class OpeningBook():
@@ -16,7 +13,6 @@ class OpeningBook():
 
 
   def findMove(self):
-    logging.debug('OpeningBook.findMove: turnNumber = ' + str(self.game.turnNumber))
     """ 
         .   .   .
          / \
@@ -152,7 +148,6 @@ class Randy():
     parser.add_argument('--moves', default='') # 1. wS1, 2. bG1 -wS1, 3. wQ wS1/, ...
     parser.add_argument('--expansions', default='') # LMD
     args = parser.parse_args(args)
-    logging.debug('Randy._parseArgs: args = ' + str(args))
     return vars(args)
 
 
@@ -167,7 +162,6 @@ class Randy():
 
 
   def printMove(self):
-    logging.debug('Randy.printMove: bestMove = ' + str(self.bestMove))
     if not self.bestMove:
       sys.stdout.write('pass')
     else:

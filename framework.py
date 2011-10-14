@@ -1,5 +1,4 @@
 import argparse
-import logging
 import math
 import os
 import shlex
@@ -9,7 +8,6 @@ from time import time
 from errors import *
 from game import *
 
-#logging.basicConfig(level=logging.DEBUG)
 
 class Framework():
   def __init__(self, args):
@@ -25,7 +23,6 @@ class Framework():
     parser.add_argument('--expansions', default='') # LM
     args = parser.parse_args(args)
     args = vars(args)
-    logging.debug('Framework._parseArgs: args = ' + str(args))
     return args
 
   def run(self):
@@ -162,7 +159,6 @@ class Framework():
           bot = 'python ' + bot
 
         commandLine = bot + ' --times="' + self.game.getTimeControlsCsv() + '" --moves="' + self.game.getMoveListCsv() + '"'
-        logging.debug('Framework.readMove: commandLine = ' + commandLine)
         args = shlex.split(commandLine)
 
         startTime = time()
@@ -174,7 +170,6 @@ class Framework():
         moveTime = round((endTime - startTime) * 1000)
         self.game.currentPlayer.timeUsed += moveTime
       except OSError as details:
-        logging.debug('Framework.readMove: OSError = ' + str(details))
         raise InputError(self.game.currentPlayer.bot + ' process failed to execute')
     else:
       moveString = raw_input(self.game.currentPlayer.color.capitalize() + "'s turn: ")

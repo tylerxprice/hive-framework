@@ -1,4 +1,3 @@
-import logging
 import math
 import sys
 from pieces import *
@@ -123,6 +122,20 @@ class Hive:
     if index == Hive.ADJACENT_NORTHWEST: 
       return Point(point.x, point.y - 1, 0)
 
+  def getAdjacencyIndex(self, firstPoint, secondPoint):
+    if firstPoint.x + 1 == secondPoint.x and firstPoint.y == secondPoint.y:
+      return Hive.ADJACENT_NORTHEAST
+    if firstPoint.x + 1 == secondPoint.x and firstPoint.y + 1 == secondPoint.y:
+      return Hive.ADJACENT_EAST 
+    if firstPoint.x == secondPoint.x and firstPoint.y + 1 == secondPoint.y:
+      return Hive.ADJACENT_SOUTHEAST 
+    if firstPoint.x - 1 == secondPoint.x and firstPoint.y == secondPoint.y:
+      return Hive.ADJACENT_SOUTHWEST 
+    if firstPoint.x - 1 == secondPoint.x and firstPoint.y - 1 == secondPoint.y:
+      return Hive.ADJACENT_WEST 
+    if firstPoint.x == secondPoint.x and firstPoint.y - 1 == secondPoint.y:
+      return Hive.ADJACENT_NORTHWEST 
+    return None
 
 
   def arePointsAdjacent(self, firstPoint, secondPoint):
@@ -227,17 +240,11 @@ class Hive:
 
     self.putdownPiece(piece, piece.point)
 
-    logging.debug('Hive.isBrokenWithoutPiece: end state, board = ' + str(self.board))
-    logging.debug('Hive.isBrokenWithoutPiece: end state, visitedPieces = ' + str(visitedPieces))
-    logging.debug('Hive.isBrokenWithoutPiece: end state, numberOFPieces = ' + str(self.getNumberOfPieces()))
-
     # if all pieces were vistited the hive is still connected
     return not len(visitedPieces) == self.getNumberOfPieces() - 1
 
 
   def _visitPiece(self, piece, visitedPieces):
-    logging.debug('Hive.visitPiece: visiting = ' + str(piece))
-
     adjacentPoints = self.getAdjacentPoints(piece.point)
     
     for point in adjacentPoints:
@@ -259,30 +266,20 @@ class Hive:
   def getRelativePoint(self, piece, relativePiece, relativePosition):
     newPoint = Point(0,0,0)
     if relativePiece:
-      logging.debug('Hive.getRelativePoint: relativePiece=' + str(relativePiece))
-      logging.debug('Hive.getRelativePoint: relativePosition=' + relativePosition)
-
       relativePoint = relativePiece.point
       if relativePosition == Hive.NORTHEAST:
-        logging.debug('Hive.getRelativePoint: NORTHEAST')
         newPoint = Point(relativePoint.x + 1, relativePoint.y, 0)
       elif relativePosition == Hive.EAST:
-        logging.debug('Hive.getRelativePoint: EAST')
         newPoint = Point(relativePoint.x + 1, relativePoint.y + 1, 0)
       elif relativePosition == Hive.SOUTHEAST:
-        logging.debug('Hive.getRelativePoint: SOUTHEAST')
         newPoint = Point(relativePoint.x, relativePoint.y + 1, 0)
       elif relativePosition == Hive.SOUTHWEST:
-        logging.debug('Hive.getRelativePoint: SOUTHWEST')
         newPoint = Point(relativePoint.x - 1, relativePoint.y, 0)
       elif relativePosition == Hive.WEST:
-        logging.debug('Hive.getRelativePoint: WEST')
         newPoint = Point(relativePoint.x - 1, relativePoint.y - 1, 0)
       elif relativePosition == Hive.NORTHWEST:
-        logging.debug('Hive.getRelativePoint: NORTHWEST')
         newPoint = Point(relativePoint.x, relativePoint.y - 1, 0)
       elif relativePosition == Hive.COVER:
-        logging.debug('Hive.getRelativePoint: COVER')
         newPoint = Point(relativePoint.x, relativePoint.y, relativePoint.z + 1)
     return newPoint
 

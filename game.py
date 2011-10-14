@@ -1,4 +1,3 @@
-import logging
 import re
 import sys
 from errors import *
@@ -99,9 +98,6 @@ class Game:
     
 
   def isValidMove(self, proposedPoint, possiblePoints):
-    logging.debug('Game.isValidMove: proposedPoint=' + str(proposedPoint))
-    logging.debug('Game.isValidMove: possiblePoints=' + str(possiblePoints))
-
     for point in possiblePoints:
       if point.x == proposedPoint.x and point.y == proposedPoint.y and point.z == proposedPoint.z:
         return True

@@ -1,4 +1,3 @@
-import logging
 import random
 from pieces import Point
 
@@ -31,11 +30,9 @@ class Zobrist:
 
   def changeSide(self):
     self.currentState = self.currentState ^ self.sideKey
-    #logging.debug('Zobrist.changeSide: state = ' + str(self.currentState))
 
 
   def updateState(self, piece):
     key = self._getZobristKey(piece.getColorIndex(), piece.getKindIndex(), piece.point)
     self.currentState = self.currentState ^ key
-    #logging.debug('Zobrist.updateState: state = ' + str(self.currentState))
 

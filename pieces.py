@@ -1,4 +1,3 @@
-import logging
 from collections import namedtuple
 
 class Point(namedtuple('Point', ['x', 'y', 'z'])):
@@ -35,10 +34,8 @@ class Piece:
     if not self.isPlayed():
       return hive.getEntryPoints(self.color)
     elif not self == hive.getTopPieceAtPoint(self.point): # beetle pinned
-      logging.debug('Piece.getPossiblePoints: piece beetle pinned')
       return []
     elif hive.isBrokenWithoutPiece(self): # if picking up breaks hive: 0 possible points
-      logging.debug('Piece.getPossiblePoints: breaks hive')
       return []
 
     return None
@@ -88,11 +85,14 @@ class QueenBeePiece(Piece):
     # partition adjacent points into occupied and free (exclude gates)
     occupiedAdjacentPoints = []
     freeAdjacentPoints = []
-    for adjacentPoint in adjacentPoints:
+    for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
-      elif not hive.isPointInGate(adjacentPoint):
-        freeAdjacentPoints.append(adjacentPoint)
+      else:
+        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
+          freeAdjacentPoints.append(adjacentPoint)
 
     # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
     for freeAdjacentPoint in freeAdjacentPoints:
@@ -151,11 +151,14 @@ class SpiderPiece(Piece):
     # partition into occupied and free (exclude gates)
     occupiedAdjacentPoints = []
     freeAdjacentPoints = []
-    for adjacentPoint in adjacentPoints:
+    for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
-      elif not hive.isPointInGate(adjacentPoint):
-        freeAdjacentPoints.append(adjacentPoint)
+      else:
+        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
+          freeAdjacentPoints.append(adjacentPoint)
     
     for freeAdjacentPoint in freeAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
@@ -183,39 +186,61 @@ class BeetlePiece(Piece):
     possiblePoints = []
 
     if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
-      logging.debug('BeetlePiece.getPossiblePoints: onTop')
-      possiblePoints = hive.getAdjacentPoints(self.point)
+      hive.pickupPiece(self)
+
+      adjacentPoints = hive.getAdjacentPoints(self.point)
+      for index, adjacentPoint in enumerate(adjacentPoints):
+        leftPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+        leftPiece = hive.getTopPieceAtPoint(leftPoint)
+        rightPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        rightPiece = hive.getTopPieceAtPoint(rightPoint)
+        minSideHeight = float('inf')
+        if leftPiece: 
+          minSideHeight = min(minSideHeight, leftPiece.point.z)
+        if rightPiece: 
+          minSideHeight = min(minSideHeight, rightPiece.point.z)
+        if minSideHeight == float('inf') or minSideHeight < self.point.z or minSideHeight < adjacentPoint.z:
+          possiblePoints.append(adjacentPoint)
+      
+      hive.putdownPiece(self, self.point)
 
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
       hive.pickupPiece(self)
 
+      # partition adjacencies into occupied and 
       adjacentPoints = hive.getAdjacentPoints(self.point)
-
-      # partition adjacencies into occupied and free (exclude gates)
       occupiedAdjacentPoints = []
       freeAdjacentPoints = []
-      for adjacentPoint in adjacentPoints:
+      for index, adjacentPoint in enumerate(adjacentPoints):
         if hive.getTopPieceAtPoint(adjacentPoint):
           occupiedAdjacentPoints.append(adjacentPoint)
-        elif not hive.isPointInGate(adjacentPoint):
-          freeAdjacentPoints.append(adjacentPoint)
+        else:
+          easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+          westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+          if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
+            freeAdjacentPoints.append(adjacentPoint)
 
-      logging.debug('BeetlePiece.getPossiblePoints: free = ' + str(freeAdjacentPoints))
-      logging.debug('BeetlePiece.getPossiblePoints: occupied = ' + str(occupiedAdjacentPoints))
+      # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+      for freeAdjacentPoint in freeAdjacentPoints:
+        for occupiedAdjacentPoint in occupiedAdjacentPoints:
+          if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
+            possiblePoints.append(freeAdjacentPoint)
+            break
 
-      # can't move to free points if pinned (needs 2 adjacent points to move through)
-      if not hive.hasTwoEmptyAdjacentPoints(self.point):
-        possiblePoints = occupiedAdjacentPoints 
-      else:
-        # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-        for freeAdjacentPoint in freeAdjacentPoints:
-          for occupiedAdjacentPoint in occupiedAdjacentPoints:
-            if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
-              possiblePoints.append(freeAdjacentPoint)
-              break
-
-        # can also move on to occupied adjacent hexes
-        possiblePoints.extend(occupiedAdjacentPoints)
+      # can also move on to occupied adjacent hexes
+      for adjacentPoint in occupiedAdjacentPoints:
+        index = hive.getAdjacencyIndex(self.point, adjacentPoint)
+        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+        easterPiece = hive.getTopPieceAtPoint(easterPoint)
+        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        westerPiece = hive.getTopPieceAtPoint(westerPoint)
+        minSideHeight = float('inf')
+        if easterPiece: 
+          minSideHeight = min(minSideHeight, easterPiece.point.z)
+        if westerPiece: 
+          minSideHeight = min(minSideHeight, westerPiece.point.z)
+        if minSideHeight == float('inf') or minSideHeight <= self.point.z or minSideHeight < adjacentPoint.z:
+          possiblePoints.append(adjacentPoint)
 
       hive.putdownPiece(self, self.point)
 
