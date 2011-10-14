@@ -253,16 +253,35 @@ class AntPiece(Piece):
     # can move to any non-gate hex around hive
     possiblePoints = []
 
-    # can't move if pinned (needs 2 adjacent points to move through)
-    if not hive.hasTwoEmptyAdjacentPoints(self.point):
-      return possiblePoints 
-
     hive.pickupPiece(self)
-    possiblePoints = hive.getBorderPoints(False) # False = exclude gates
+    self._visitPoint(self.point, possiblePoints, hive)
     possiblePoints.remove(self.point)
     hive.putdownPiece(self, self.point)
 
     return possiblePoints
+
+  def _visitPoint(self, point, possiblePoints, hive):
+    possiblePoints.append(point)
+    adjacentPoints = hive.getAdjacentPoints(point)
+
+    # partition into occupied and slideable
+    occupiedAdjacentPoints = []
+    slideableAdjacentPoints = []
+    for index, adjacentPoint in enumerate(adjacentPoints):
+      if hive.getTopPieceAtPoint(adjacentPoint):
+        occupiedAdjacentPoints.append(adjacentPoint)
+      else:
+        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
+          slideableAdjacentPoints.append(adjacentPoint)
+    
+    for slidableAdjacentPoint in slideableAdjacentPoints:
+      for occupiedAdjacentPoint in occupiedAdjacentPoints:
+        if hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint) and not slidableAdjacentPoint in possiblePoints: 
+          self._visitPoint(slidableAdjacentPoint, possiblePoints, hive)
+          break
+
 
   def isPinned(self, hive):
     return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point)

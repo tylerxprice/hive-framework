@@ -179,39 +179,24 @@ class Hive:
     return maxFreeCount > 1
 
 
-  def getBorderPoints(self, includeGates):
-    points = []
-    uniquePoints = dict()
-    
-    for key, pieces in self.board.iteritems():
-      piece = pieces[-1]
-      for point in self.getAdjacentPoints(piece.point):
-        pointKey = self.getBoardKey(point)
-        if not self.board.has_key(pointKey) and not uniquePoints.has_key(point):
-          if includeGates or not self.isPointInGate(point):
-            uniquePoints[pointKey] = 1
-            points.append(point)
-    
-    return points; 
-
-
   def getEntryPoints(self, color):
+    if self.numberOfPieces == 0:
+      return [Point(0, 0, 0)]
+    if self.numberOfPieces == 1:
+      return self.getAdjacentPoints(Point(0, 0, 0))
+
     points = []
     uniquePoints = dict()
 
     for key, pieces in self.board.iteritems():
       piece = pieces[-1] 
-
-      adjacentPoints = self.getAdjacentPoints(piece.point)
-      for point in adjacentPoints:
-        pointKey = self.getBoardKey(point)
-        if not self.board.has_key(pointKey) and not uniquePoints.has_key(pointKey):
-          if self.numberOfPieces == 1 or self.doesPointBorderOnlyColor(point, color):
-            uniquePoints[pointKey] = 1
-            points.append(point)
-
-    if len(points) == 0:
-      points.append(Point(0, 0, 0))
+      if piece.color == color:
+        for adjacentPoint in self.getAdjacentPoints(piece.point):
+          adjacentKey = self.getBoardKey(adjacentPoint)
+          if not self.board.has_key(adjacentKey) and not uniquePoints.has_key(adjacentKey):
+            if self.numberOfPieces == 1 or self.doesPointBorderOnlyColor(adjacentPoint, color):
+              uniquePoints[adjacentKey] = 1
+              points.append(adjacentPoint)
 
     return points; 
 
