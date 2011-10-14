@@ -18,45 +18,42 @@ class OpeningBook():
   def findMove(self):
     logging.debug('OpeningBook.findMove: turnNumber = ' + str(self.game.turnNumber))
     """ 
-                 -3  -2  -1   0   1   2   3  x
+        .   .   .
+         / \
+      . |wG1| .
+         \ /
+        .   .   .
 
-             -2  .   .   .   .   .   .   .   
-                            
-           -1  .   .   .   .   .   .   .   
-                        / \                
-          0  .   .   . | ? | .   .   .   
-                        \ /           
-       -1  .   .   .   .   .   .   .   
-                                    
-     -2  .   .   .   .   .   .   .   
-
-    y
-
-    1. ?
+    1. wG1
     """                                                       
     if self.game.turnNumber == 1:
       return Move(self.game.currentPlayer.pieces['G1'], Point.NONE, Point(0,0,0))
 
-
     """ 
-                 -3  -2  -1   0   1   2   3  x
+       .   .   .   .
+        / \ / \
+     . |bG1|w__| .
+        \ / \ /
+       .   .   .   .
 
-             -2  .   .   .   .   .   .   .   
-                            
-           -1  .   .   .   .   .   .   .   
-                    / \ / \                
-          0  .   . | ? |w__| .   .   .   
-                    \ / \ /           
-       -1  .   .   .   .   .   .   .   
-                                    
-     -2  .   .   .   .   .   .   .   
-
-    y
-
-    1. w_, 2. ? -w_
+    1. w__, 2. bG1 -w__
     """                                                       
     if self.game.turnNumber == 2:
-      return Move(self.game.currentPlayer.pieces['G1'], Point.NONE, Point(-1,0,0))
+      return Move(self.game.currentPlayer.pieces['G1'], Point.NONE, Point(-1,-1,0))
+    
+    """ 
+      .   .   .   .
+               / \
+        .   . |wQ | .
+         / \ / \ /
+      . |b__|wG1| .
+         \ / \ /
+        .   .   .   .
+
+    1. wG1, 2. b__ -wG1, 3. wQ wG1/
+    """                                                       
+    if self.game.turnNumber == 3:
+      return Move(self.game.currentPlayer.pieces['Q'], Point.NONE, Point(1,0,0))
 
 
 
@@ -117,7 +114,7 @@ class MoveSearch():
     if winner == Game.WINNER_DRAW:
       return signFlip * MoveSearch.CONTEMPT_FACTOR
 
-    return signFlip * MoveSearch.WIN_SCORE * winner
+    return signFlip * (MoveSearch.WIN_SCORE + depth) * winner
 
 
   def evaluate(self):
@@ -172,7 +169,7 @@ class Randy():
   def printMove(self):
     logging.debug('Randy.printMove: bestMove = ' + str(self.bestMove))
     if not self.bestMove:
-      sys.stdout.write('invalid move')
+      sys.stdout.write('pass')
     else:
       sys.stdout.write(self.game.getMoveNotation(self.bestMove))
 

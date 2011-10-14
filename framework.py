@@ -20,7 +20,7 @@ class Framework():
     parser.add_argument(args[0], default='') 
     parser.add_argument('--white') 
     parser.add_argument('--black')
-    parser.add_argument('--times', default='30000,0,0') # game time, white used, black used (ms)
+    parser.add_argument('--times', default='600000,0,0') # game time, white used, black used (ms)
     parser.add_argument('--moves', default='') # 1. wS1, 2. bG1 -wS1, 3. wQ wS1/, ...
     parser.add_argument('--expansions', default='') # LM
     args = parser.parse_args(args)
@@ -32,7 +32,7 @@ class Framework():
     self.args['white'] = self.readBot('white', self.args['white'])
     self.args['black'] = self.readBot('black', self.args['black'])
     self.game = Game(self.args['white'], self.args['black'], self.args['times'], self.args['moves'], self.args['expansions'])
-    self.game.hive.printBoard()
+    self.game.printBoard()
 
     results = {}
     results['play_by_play'] = [] 
@@ -171,7 +171,7 @@ class Framework():
         endTime = time()
 
         sys.stdout.write(errorOutput)
-        moveTime = round((endTime - startTime) * 100)
+        moveTime = round((endTime - startTime) * 1000)
         self.game.currentPlayer.timeUsed += moveTime
       except OSError as details:
         logging.debug('Framework.readMove: OSError = ' + str(details))

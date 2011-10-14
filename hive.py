@@ -71,6 +71,7 @@ class Hive:
   def __init__(self, expansions):
     self.board = dict()
     self.zobrist = Zobrist(5 + len(expansions))
+    self.numberOfPieces = 0
 
 
   def getBoardKey(self, point):
@@ -80,7 +81,8 @@ class Hive:
   def getTopPieceAtPoint(self, point):
     key = self.getBoardKey(point)
     if self.board.has_key(key):
-      return self.board[key][len(self.board[key]) - 1]
+      pieces = self.board[key]
+      return pieces[len(pieces) - 1]
     return None
 
 
@@ -92,11 +94,8 @@ class Hive:
 
 
   def getNumberOfPieces(self):
-    count = 0
-    for key, value in self.board.iteritems():
-      count += len(value)
-    return count
-  
+    return self.numberOfPieces
+
 
   def getState(self):
     return self.zobrist.currentState
@@ -111,17 +110,17 @@ class Hive:
             Point(point.x, point.y - 1, 0)]      # (x, y-1)   NORTHWEST
 
   def getAdjacentPoint(self, point, index):
-    if index == ADJACENT_NORTHEAST: 
+    if index == Hive.ADJACENT_NORTHEAST: 
       return Point(point.x + 1, point.y, 0)
-    if index == ADJACENT_EAST: 
+    if index == Hive.ADJACENT_EAST: 
       return Point(point.x + 1, point.y + 1, 0)
-    if index == ADJACENT_SOUTHEAST: 
+    if index == Hive.ADJACENT_SOUTHEAST: 
       return Point(point.x, point.y + 1, 0)
-    if index == ADJACENT_SOUTHWEST: 
+    if index == Hive.ADJACENT_SOUTHWEST: 
       return Point(point.x - 1, point.y, 0)
-    if index == ADJACENT_WEST: 
+    if index == Hive.ADJACENT_WEST: 
       return Point(point.x - 1, point.y - 1, 0)
-    if index == ADJACENT_NORTHWEST: 
+    if index == Hive.ADJACENT_NORTHWEST: 
       return Point(point.x, point.y - 1, 0)
 
 
@@ -237,7 +236,7 @@ class Hive:
 
 
   def _visitPiece(self, piece, visitedPieces):
-    logging.debug('Hive.visitPice: visiting = ' + str(piece))
+    logging.debug('Hive.visitPiece: visiting = ' + str(piece))
 
     adjacentPoints = self.getAdjacentPoints(piece.point)
     
@@ -295,6 +294,7 @@ class Hive:
     else:
       self.board[key].remove(piece)
     self.zobrist.updateState(piece)
+    self.numberOfPieces -= 1
 
 
   def putdownPiece(self, piece, point):
@@ -311,6 +311,7 @@ class Hive:
 
     piece.point = point
     self.zobrist.updateState(piece)
+    self.numberOfPieces += 1
   
 
   def getSurroundedQueenColors(self):
@@ -379,7 +380,7 @@ class Hive:
 
     for si in s:
       sys.stderr.write('# ' + ''.join(si) + '\n')
-    sys.stderr.write('\n')
+    sys.stderr.write('#\n')
 
 
   def getBoardArrayLimits(self):

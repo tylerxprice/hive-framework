@@ -27,8 +27,7 @@ class Game:
 
   def getOpposingPlayer(self):
     if self.currentPlayer.color == Player.WHITE:
-      return self.blackPlayer
-    return self.whitePlayer
+      return self.whitePlayer
 
   def playMove(self, moveString):
     self.validateMoveString(moveString)
@@ -124,8 +123,15 @@ class Game:
     if not self.currentPlayer.hasPlayed('Q'):
       canMoveHivePieces = False
 
+    # only important to be able one of each piece kind
+    entryMovesAdded = {'A': False, 'B': False, 'G': False, 'Q': False, 'S': False, 'M': False, 'L': False, 'D': False}
+
     for key, piece in self.currentPlayer.pieces.iteritems():
-      if canMoveHivePieces or not piece.isPlayed():
+      if piece.isPlayed() and canMoveHivePieces:
+        for point in piece.getPossiblePoints(self.hive):
+          moveList.append(Move(piece, piece.point, point))
+      if not piece.isPlayed() and not entryMovesAdded[piece.kind]:
+        entryMovesAdded[piece.kind] = True
         for point in piece.getPossiblePoints(self.hive):
           moveList.append(Move(piece, piece.point, point))
 
@@ -248,4 +254,7 @@ class Game:
 
   def printBoard(self):
     self.hive.printBoard()
+    self.whitePlayer.printPile()
+    self.blackPlayer.printPile()
+    sys.stderr.write('\n')
 

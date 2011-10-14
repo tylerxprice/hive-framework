@@ -1,3 +1,4 @@
+import sys
 from pieces import *
 
 class Player:
@@ -40,6 +41,14 @@ class Player:
     return self.pieces[key].isPlayed()
 
 
+  def getNumberOfPiecesToPlay(self):
+    count = 0
+    for key, piece in self.pieces.iteritems():
+      if not piece.isPlayed():
+        count += 1
+    return count
+
+
   def addHiveState(self, state):
     self.seenHiveStates.append(state)
 
@@ -55,4 +64,13 @@ class Player:
 
     length = len(self.seenHiveStates)
     return self.seenHiveStates[length - 5] == self.seenHiveStates[length - 3] == self.seenHiveStates[length - 1]
+
+  def printPile(self):
+    pile = []
+    for key in sorted(self.pieces.keys()):
+      piece = self.pieces[key]
+      if not piece.isPlayed():
+        pile.append(piece.getNotation())
+
+    sys.stderr.write("%s's Pile: %s\n" % (self.color.capitalize(), ', '.join(pile)))
 
