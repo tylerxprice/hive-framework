@@ -191,6 +191,7 @@ class BeetlePiece(Piece):
     adjacentPoints = hive.getAdjacentPoints(self.point)
     climbableAdjacentPoints = []
     slideableAdjacentPoints = []
+    
     if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can possibly climb onto any adjacent hex
       climbableAdjacentPoints = adjacentPoints
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
@@ -424,12 +425,14 @@ class MosquitoPiece(QueenBeePiece, SpiderPiece, BeetlePiece, AntPiece, Grasshopp
 
     possiblePoints = []
 
-    adjacentPoints = hive.getAdjacentPoints(point)
-    for adjacentPoint in adjacentPoints:
-      piece = hive.getTopPieceAtPoint(adjacentPoint)
-      if piece:
-        kindPossiblePoints = piece.__class__.getPossiblePoints(self, hive)
-        possiblePoints = possiblePoints + filter(lambda x:x not in possiblePoints, kindPossiblePoints)
+    if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # on top: can only move as beetle
+      possiblePoints = BeetlePiece.getPossiblePoints(self, hive)
+    else:
+      for adjacentPoint in hive.getAdjacentPoints(point):
+        piece = hive.getTopPieceAtPoint(adjacentPoint)
+        if piece:
+          kindPossiblePoints = piece.__class__.getPossiblePoints(self, hive)
+          possiblePoints = possiblePoints + filter(lambda x:x not in possiblePoints, kindPossiblePoints)
 
     return possiblePoints
 
