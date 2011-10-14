@@ -42,7 +42,7 @@ class Piece:
 
 
   def isPinned(self, hive):
-    if self.point == Point.NONE: # not on board yet
+    if not self.isPlayed():
       return False
 
     if not self == hive.getTopPieceAtPoint(self.point): # beetle pinned

@@ -364,6 +364,8 @@ class Hive:
           s1[sx+2] = '|'
           s2[sx-1] = '\\'
           s2[sx+1] = '/'
+          if piece.point.z > 0:
+            s0[sx] = str(piece.point.z)
         else:
           s1[sx] = '.'
         sx += 4
