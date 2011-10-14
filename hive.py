@@ -74,14 +74,14 @@ class Hive:
 
 
   def getBoardKey(self, point):
-    return str(point.x) + ',' + str(point.y)
+    return `point.x` + ',' + `point.y`
 
 
   def getTopPieceAtPoint(self, point):
     key = self.getBoardKey(point)
     if self.board.has_key(key):
       pieces = self.board[key]
-      return pieces[len(pieces) - 1]
+      return pieces[-1]
     return None
 
 
@@ -90,10 +90,6 @@ class Hive:
     if self.board.has_key(key):
       return self.board[key]
     return []
-
-
-  def getNumberOfPieces(self):
-    return self.numberOfPieces
 
 
   def getState(self):
@@ -108,6 +104,7 @@ class Hive:
             Point(point.x - 1, point.y - 1, 0),  # (x-1, y-1) WEST
             Point(point.x, point.y - 1, 0)]      # (x, y-1)   NORTHWEST
 
+
   def getAdjacentPoint(self, point, index):
     if index == Hive.ADJACENT_NORTHEAST: 
       return Point(point.x + 1, point.y, 0)
@@ -121,6 +118,7 @@ class Hive:
       return Point(point.x - 1, point.y - 1, 0)
     if index == Hive.ADJACENT_NORTHWEST: 
       return Point(point.x, point.y - 1, 0)
+
 
   def getAdjacencyIndex(self, firstPoint, secondPoint):
     if firstPoint.x + 1 == secondPoint.x and firstPoint.y == secondPoint.y:
@@ -148,14 +146,11 @@ class Hive:
     return (abs(dx) + abs(dy) + abs(dx-dy)) / 2
 
 
-  def doesPointOnlyBorderColor(self, point, color):
+  def doesPointBorderOnlyColor(self, point, color):
     for point in self.getAdjacentPoints(point):
-      pointKey = self.getBoardKey(point)
-      if self.board.has_key(pointKey):
-        piece = self.board[pointKey][len(self.board[pointKey]) - 1]
-        if not piece.color == color:
-          return False
-
+      piece = self.getTopPieceAtPoint(point)
+      if piece and not piece.color == color:
+        return False
     return True
 
 
@@ -171,10 +166,9 @@ class Hive:
 
 
   def hasTwoEmptyAdjacentPoints(self, point):
-    adjacentPoints = self.getAdjacentPoints(point)
-
     freeCount = 0
     maxFreeCount = 0
+    adjacentPoints = self.getAdjacentPoints(point)
     for adjacentPoint in adjacentPoints:
       if self.getTopPieceAtPoint(adjacentPoint):
         freeCount = 0 # reset free count
@@ -190,7 +184,7 @@ class Hive:
     uniquePoints = dict()
     
     for key, pieces in self.board.iteritems():
-      piece = pieces[len(pieces) - 1]
+      piece = pieces[-1]
       for point in self.getAdjacentPoints(piece.point):
         pointKey = self.getBoardKey(point)
         if not self.board.has_key(pointKey) and not uniquePoints.has_key(point):
@@ -206,13 +200,13 @@ class Hive:
     uniquePoints = dict()
 
     for key, pieces in self.board.iteritems():
-      piece = pieces[len(pieces) - 1] 
+      piece = pieces[-1] 
 
       adjacentPoints = self.getAdjacentPoints(piece.point)
       for point in adjacentPoints:
         pointKey = self.getBoardKey(point)
         if not self.board.has_key(pointKey) and not uniquePoints.has_key(pointKey):
-          if self.getNumberOfPieces() == 1 or self.doesPointOnlyBorderColor(point, color):
+          if self.numberOfPieces == 1 or self.doesPointBorderOnlyColor(point, color):
             uniquePoints[pointKey] = 1
             points.append(point)
 
@@ -223,41 +217,39 @@ class Hive:
 
 
   def isBrokenWithoutPiece(self, piece):
-    if len(self.board) == 0:
+    if self.numberOfPieces == 0:
       return False
   
-    visitedPieces = dict()
-
     self.pickupPiece(piece)
 
-    # get a random piece
+    # get a random piece for the root
     key = self.board.keys()[0]
-    rootPiece = self.board[key][len(self.board[key]) - 1]
-    for p in self.board[key]: visitedPieces[p.getNotation()] = 1
+    root = self.board[key][-1]
 
     # try to visit all pieces in the hive
-    self._visitPiece(rootPiece, visitedPieces)
+    visitedPieces = dict()
+    self._visitPiece(root, visitedPieces)
 
     self.putdownPiece(piece, piece.point)
 
     # if all pieces were vistited the hive is still connected
-    return not len(visitedPieces) == self.getNumberOfPieces() - 1
+    return not len(visitedPieces) == self.numberOfPieces - 1
 
 
   def _visitPiece(self, piece, visitedPieces):
+    for p in self.getPiecesAtPoint(piece.point):
+      visitedPieces[p.getNotation()] = 1
+
     adjacentPoints = self.getAdjacentPoints(piece.point)
-    
     for point in adjacentPoints:
       topPiece = self.getTopPieceAtPoint(point)
       if topPiece and not visitedPieces.has_key(topPiece.getNotation()):
-        for p in self.getPiecesAtPoint(point):
-          visitedPieces[p.getNotation()] = 1
         self._visitPiece(topPiece, visitedPieces)
 
 
   def getPiece(self, (color, kind, number)):
-    for key in self.board.keys():
-      for piece in self.board[key]:
+    for key, pieces in self.board.iteritems():
+      for piece in pieces:
         if piece.color == color and piece.kind == kind and str(piece.number) == number:
           return piece
     return None 

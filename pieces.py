@@ -54,7 +54,7 @@ class Piece:
 
 
   def __repr__(self):
-    return self.color + self.kind + str(self.number) + ' @ ' + str(self.point)
+    return self.color + self.kind + `self.number` + ' @ ' + str(self.point)
 
 
 
@@ -82,9 +82,9 @@ class QueenBeePiece(Piece):
 
     adjacentPoints = hive.getAdjacentPoints(self.point)
 
-    # partition adjacent points into occupied and free (exclude gates)
+    # partition adjacent points into occupied and slideable
     occupiedAdjacentPoints = []
-    freeAdjacentPoints = []
+    slideableAdjacentPoints = []
     for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
@@ -92,13 +92,13 @@ class QueenBeePiece(Piece):
         easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
         westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-          freeAdjacentPoints.append(adjacentPoint)
+          slideableAdjacentPoints.append(adjacentPoint)
 
-    # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-    for freeAdjacentPoint in freeAdjacentPoints:
+    # check slideable adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+    for slidableAdjacentPoint in slideableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
-        if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
-          possiblePoints.append(freeAdjacentPoint)
+        if hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint):
+          possiblePoints.append(slidableAdjacentPoint)
           break
     
     hive.putdownPiece(self, self.point)
@@ -148,9 +148,9 @@ class SpiderPiece(Piece):
     # get adjacencies
     adjacentPoints = hive.getAdjacentPoints(point)
 
-    # partition into occupied and free (exclude gates)
+    # partition into occupied and slideable
     occupiedAdjacentPoints = []
-    freeAdjacentPoints = []
+    slideableAdjacentPoints = []
     for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
@@ -158,13 +158,15 @@ class SpiderPiece(Piece):
         easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
         westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-          freeAdjacentPoints.append(adjacentPoint)
+          slideableAdjacentPoints.append(adjacentPoint)
     
-    for freeAdjacentPoint in freeAdjacentPoints:
+    for slidableAdjacentPoint in slideableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
-        if not freeAdjacentPoint in currentPath and hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
-          self._visitPoint(freeAdjacentPoint, depth + 1, currentPath, possiblePoints, hive)
+        if not slidableAdjacentPoint in currentPath and hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint):
+          self._visitPoint(slidableAdjacentPoint, depth + 1, currentPath, possiblePoints, hive)
           break
+
+    currentPath.pop()
 
   def isPinned(self, hive):
     return Piece.isPinned(self, hive) and not hive.hasTwoEmptyAdjacentPoints(self.point)
@@ -185,64 +187,52 @@ class BeetlePiece(Piece):
 
     possiblePoints = []
 
-    if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can move to any adjacent hex
-      hive.pickupPiece(self)
-
-      adjacentPoints = hive.getAdjacentPoints(self.point)
-      for index, adjacentPoint in enumerate(adjacentPoints):
-        leftPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
-        leftPiece = hive.getTopPieceAtPoint(leftPoint)
-        rightPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
-        rightPiece = hive.getTopPieceAtPoint(rightPoint)
-        minSideHeight = float('inf')
-        if leftPiece: 
-          minSideHeight = min(minSideHeight, leftPiece.point.z)
-        if rightPiece: 
-          minSideHeight = min(minSideHeight, rightPiece.point.z)
-        if minSideHeight == float('inf') or minSideHeight < self.point.z or minSideHeight < adjacentPoint.z:
-          possiblePoints.append(adjacentPoint)
-      
-      hive.putdownPiece(self, self.point)
-
+    # partition adjacencies into climbable (up or down) and slideable
+    adjacentPoints = hive.getAdjacentPoints(self.point)
+    climbableAdjacentPoints = []
+    slideableAdjacentPoints = []
+    if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can possibly climb onto any adjacent hex
+      climbableAdjacentPoints = adjacentPoints
     else: # beetle on ground: can move 1 hex away (occupied or not), but cannot enter gates
-      hive.pickupPiece(self)
-
-      # partition adjacencies into occupied and 
-      adjacentPoints = hive.getAdjacentPoints(self.point)
-      occupiedAdjacentPoints = []
-      freeAdjacentPoints = []
       for index, adjacentPoint in enumerate(adjacentPoints):
         if hive.getTopPieceAtPoint(adjacentPoint):
-          occupiedAdjacentPoints.append(adjacentPoint)
+          climbableAdjacentPoints.append(adjacentPoint)
         else:
           easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
           westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
           if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-            freeAdjacentPoints.append(adjacentPoint)
+            slideableAdjacentPoints.append(adjacentPoint)
 
-      # check free adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-      for freeAdjacentPoint in freeAdjacentPoints:
-        for occupiedAdjacentPoint in occupiedAdjacentPoints:
-          if hive.arePointsAdjacent(freeAdjacentPoint, occupiedAdjacentPoint):
-            possiblePoints.append(freeAdjacentPoint)
-            break
 
-      # can also move on to occupied adjacent hexes
-      for adjacentPoint in occupiedAdjacentPoints:
-        index = hive.getAdjacencyIndex(self.point, adjacentPoint)
-        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
-        easterPiece = hive.getTopPieceAtPoint(easterPoint)
-        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
-        westerPiece = hive.getTopPieceAtPoint(westerPoint)
-        minSideHeight = float('inf')
-        if easterPiece: 
-          minSideHeight = min(minSideHeight, easterPiece.point.z)
-        if westerPiece: 
-          minSideHeight = min(minSideHeight, westerPiece.point.z)
-        if minSideHeight == float('inf') or minSideHeight <= self.point.z or minSideHeight < adjacentPoint.z:
-          possiblePoints.append(adjacentPoint)
+    hive.pickupPiece(self)
 
-      hive.putdownPiece(self, self.point)
+    # queen style move on ground 
+    for slidableAdjacentPoint in slideableAdjacentPoints:
+      for climbableAdjacentPoint in climbableAdjacentPoints:
+        if hive.arePointsAdjacent(slidableAdjacentPoint, climbableAdjacentPoint):
+          possiblePoints.append(slidableAdjacentPoint)
+          break
+
+    # climbing style move (can't climb through gates)
+    for adjacentPoint in climbableAdjacentPoints:
+      index = hive.getAdjacencyIndex(self.point, adjacentPoint)
+      adjacentPiece = hive.getTopPieceAtPoint(adjacentPoint)
+      adjacentHeight = -1
+      if adjacentPiece:
+        adjacentHeight = adjacentPiece.point.z
+      easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
+      easterPiece = hive.getTopPieceAtPoint(easterPoint)
+      westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+      westerPiece = hive.getTopPieceAtPoint(westerPoint)
+      minSideHeight = float('inf')
+      if easterPiece: 
+        minSideHeight = min(minSideHeight, easterPiece.point.z)
+      if westerPiece: 
+        minSideHeight = min(minSideHeight, westerPiece.point.z)
+      if minSideHeight == float('inf') or minSideHeight <= self.point.z or minSideHeight < adjacentHeight:
+        possiblePoints.append(adjacentPoint)
+
+    hive.putdownPiece(self, self.point)
 
     return possiblePoints
 
@@ -388,12 +378,35 @@ class LadybugPiece(Piece):
 
     currentPath.append(point)
 
-    adjacentPoints = hive.getAdjacentPoints(point)
-    for adjacentPoint in adjacentPoints:
-      if depth in (0, 1) and hive.getTopPieceAtPoint(adjacentPoint):
-        self._visitPoint(adjacentPoint, depth - 1, currentPath, possiblePoints, hive)
-      if depth == 2 and not hive.getTopPieceAtPoint(adjacentPoint):
-        self._visitPoint(adjacentPoint, depth - 1, currentPath, possiblePoints, hive)
+    pieceHeight = -1
+    piece = hive.getTopPieceAtPoint(point)
+    if piece:
+      pieceHeight = piece.point.z
+    
+    for index, adjacentPoint in enumerate(hive.getAdjacentPoints(point)):
+      if not adjacentPoint in currentPath:
+        adjacentPiece = hive.getTopPieceAtPoint(adjacentPoint)
+        adjacentHeight = -1
+        if adjacentPiece:
+          adjcentHeight = adjacentPiece.point.z
+
+        easterPoint = hive.getAdjacentPoint(point, ((index - 1) % 6))
+        easterPiece = hive.getTopPieceAtPoint(easterPoint)
+        westerPoint = hive.getAdjacentPoint(point, ((index + 1) % 6))
+        westerPiece = hive.getTopPieceAtPoint(westerPoint)
+        minSideHeight = float('inf')
+        if easterPiece: 
+          minSideHeight = min(minSideHeight, easterPiece.point.z)
+        if westerPiece: 
+          minSideHeight = min(minSideHeight, westerPiece.point.z)
+
+        if minSideHeight == float('inf') or minSideHeight <= pieceHeight or minSideHeight < adjacentHeight:
+          if depth in (0,1) and adjacentPiece:
+              self._visitPoint(adjacentPoint, depth + 1, currentPath, possiblePoints, hive)
+          elif depth == 2 and not adjacentPiece:
+            self._visitPoint(adjacentPoint, depth + 1, currentPath, possiblePoints, hive)
+
+    currentPath.pop()
 
 
 class MosquitoPiece(QueenBeePiece, SpiderPiece, BeetlePiece, AntPiece, GrasshopperPiece, LadybugPiece, Piece):
