@@ -254,7 +254,7 @@ class AntPiece(Piece):
     possiblePoints = []
 
     hive.pickupPiece(self)
-    self._visitPoint(self.point, possiblePoints, hive, 1)
+    self._visitPoint(self.point, possiblePoints, hive)
     possiblePoints.remove(self.point)
     hive.putdownPiece(self, self.point)
 
