@@ -143,6 +143,14 @@ class Hive:
   def getDistanceBetweenPoints(self, firstPoint, secondPoint):
     dx = secondPoint.x - firstPoint.x
     dy = secondPoint.y - firstPoint.y
+    dist = 0
+    #if dx == 0 or dy == 0:
+    #  dist = abs(dx) + abs(dy)
+    #elif dx/abs(dx) == dy/abs(dy):
+    #  dist = max(abs(dx),abs(dy))
+    #else :
+    #    dist = abs(dx) + abs(dy)
+    #return dist
     return (abs(dx) + abs(dy) + abs(dx-dy)) / 2
 
 

@@ -155,8 +155,8 @@ class SpiderPiece(Piece):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
       else:
-        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
-        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        easterPoint = hive.getAdjacentPoint(point, ((index - 1) % 6))
+        westerPoint = hive.getAdjacentPoint(point, ((index + 1) % 6))
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
           slideableAdjacentPoints.append(adjacentPoint)
     
@@ -254,7 +254,7 @@ class AntPiece(Piece):
     possiblePoints = []
 
     hive.pickupPiece(self)
-    self._visitPoint(self.point, possiblePoints, hive)
+    self._visitPoint(self.point, possiblePoints, hive, 1)
     possiblePoints.remove(self.point)
     hive.putdownPiece(self, self.point)
 
@@ -271,11 +271,13 @@ class AntPiece(Piece):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
       else:
-        easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
-        westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
+        easterPoint = hive.getAdjacentPoint(point, ((index - 1) % 6))
+        westerPoint = hive.getAdjacentPoint(point, ((index + 1) % 6))
+        easterPiece = hive.getTopPieceAtPoint(easterPoint)
+        westerPiece = hive.getTopPieceAtPoint(westerPoint)
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
           slideableAdjacentPoints.append(adjacentPoint)
-    
+
     for slidableAdjacentPoint in slideableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
         if hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint) and not slidableAdjacentPoint in possiblePoints: 
