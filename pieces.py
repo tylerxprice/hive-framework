@@ -82,9 +82,9 @@ class QueenBeePiece(Piece):
 
     adjacentPoints = hive.getAdjacentPoints(self.point)
 
-    # partition adjacent points into occupied and slideable
+    # partition adjacent points into occupied and slidable
     occupiedAdjacentPoints = []
-    slideableAdjacentPoints = []
+    slidableAdjacentPoints = []
     for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
@@ -92,10 +92,10 @@ class QueenBeePiece(Piece):
         easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
         westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-          slideableAdjacentPoints.append(adjacentPoint)
+          slidableAdjacentPoints.append(adjacentPoint)
 
-    # check slideable adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
-    for slidableAdjacentPoint in slideableAdjacentPoints:
+    # check slidable adjacencies for valid moves (must be adjacent to one of the occupied adjacencies)
+    for slidableAdjacentPoint in slidableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
         if hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint):
           possiblePoints.append(slidableAdjacentPoint)
@@ -148,9 +148,9 @@ class SpiderPiece(Piece):
     # get adjacencies
     adjacentPoints = hive.getAdjacentPoints(point)
 
-    # partition into occupied and slideable
+    # partition into occupied and slidable
     occupiedAdjacentPoints = []
-    slideableAdjacentPoints = []
+    slidableAdjacentPoints = []
     for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
@@ -158,9 +158,9 @@ class SpiderPiece(Piece):
         easterPoint = hive.getAdjacentPoint(point, ((index - 1) % 6))
         westerPoint = hive.getAdjacentPoint(point, ((index + 1) % 6))
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-          slideableAdjacentPoints.append(adjacentPoint)
+          slidableAdjacentPoints.append(adjacentPoint)
     
-    for slidableAdjacentPoint in slideableAdjacentPoints:
+    for slidableAdjacentPoint in slidableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
         if not slidableAdjacentPoint in currentPath and hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint):
           self._visitPoint(slidableAdjacentPoint, depth + 1, currentPath, possiblePoints, hive)
@@ -187,10 +187,10 @@ class BeetlePiece(Piece):
 
     possiblePoints = []
 
-    # partition adjacencies into climbable (up or down) and slideable
+    # partition adjacencies into climbable (up or down) and slidable
     adjacentPoints = hive.getAdjacentPoints(self.point)
     climbableAdjacentPoints = []
-    slideableAdjacentPoints = []
+    slidableAdjacentPoints = []
     
     if self.point.z > 0 and self == hive.getTopPieceAtPoint(self.point): # beetle on top: can possibly climb onto any adjacent hex
       climbableAdjacentPoints = adjacentPoints
@@ -202,13 +202,13 @@ class BeetlePiece(Piece):
           easterPoint = hive.getAdjacentPoint(self.point, ((index - 1) % 6))
           westerPoint = hive.getAdjacentPoint(self.point, ((index + 1) % 6))
           if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-            slideableAdjacentPoints.append(adjacentPoint)
+            slidableAdjacentPoints.append(adjacentPoint)
 
 
     hive.pickupPiece(self)
 
     # queen style move on ground 
-    for slidableAdjacentPoint in slideableAdjacentPoints:
+    for slidableAdjacentPoint in slidableAdjacentPoints:
       for climbableAdjacentPoint in climbableAdjacentPoints:
         if hive.arePointsAdjacent(slidableAdjacentPoint, climbableAdjacentPoint):
           possiblePoints.append(slidableAdjacentPoint)
@@ -264,9 +264,9 @@ class AntPiece(Piece):
     possiblePoints.append(point)
     adjacentPoints = hive.getAdjacentPoints(point)
 
-    # partition into occupied and slideable
+    # partition into occupied and slidable
     occupiedAdjacentPoints = []
-    slideableAdjacentPoints = []
+    slidableAdjacentPoints = []
     for index, adjacentPoint in enumerate(adjacentPoints):
       if hive.getTopPieceAtPoint(adjacentPoint):
         occupiedAdjacentPoints.append(adjacentPoint)
@@ -276,9 +276,9 @@ class AntPiece(Piece):
         easterPiece = hive.getTopPieceAtPoint(easterPoint)
         westerPiece = hive.getTopPieceAtPoint(westerPoint)
         if not hive.getTopPieceAtPoint(easterPoint) or not hive.getTopPieceAtPoint(westerPoint):
-          slideableAdjacentPoints.append(adjacentPoint)
+          slidableAdjacentPoints.append(adjacentPoint)
 
-    for slidableAdjacentPoint in slideableAdjacentPoints:
+    for slidableAdjacentPoint in slidableAdjacentPoints:
       for occupiedAdjacentPoint in occupiedAdjacentPoints:
         if hive.arePointsAdjacent(slidableAdjacentPoint, occupiedAdjacentPoint) and not slidableAdjacentPoint in possiblePoints: 
           self._visitPoint(slidableAdjacentPoint, possiblePoints, hive)
